@@ -96,23 +96,25 @@ src/services/api/
 
 ### Screens
 
-| # | Screen | Endpoint | Tasks |
-|---|--------|----------|-------|
-| 2.1 | [ ] Dashboard | `esf.api.store.get_dashboard` | Store cards, recent care logs, pull-to-refresh |
-| 2.2 | [ ] Store Detail | `GET /api/resource/Distribution Store/<id>` | Store info, quick stats, nav buttons |
-| 2.3 | [ ] Stock Levels | `esf.api.store.get_stock_levels` | Item list, search, filter, infinite scroll |
-| 2.4 | [ ] Farm Owners List | `GET /api/resource/Farm Owner` | List, search |
-| 2.5 | [ ] Farm Owner Detail | `GET /api/resource/Farm Owner/<id>` | Info, farms list, contact actions |
-| 2.6 | [ ] Farm Detail | `GET /api/resource/Farm/<id>` | Info, gardens list |
-| 2.7 | [ ] Garden Detail | `GET /api/resource/Garden/<id>` | Info, map, cultivation logs |
-| 2.8 | [ ] Cultivation Logs | `GET /api/resource/Cultivation Log` | List, filter by garden/status |
-| 2.9 | [ ] Cultivation Detail | `GET /api/resource/Cultivation Log/<id>` | Info, care logs list |
-| 2.10 | [ ] Care Logs | `GET /api/resource/Care Log` | List, filter by date/garden |
-| 2.11 | [ ] Care Log Detail | `GET /api/resource/Care Log/<id>` | Info, items used |
-| 2.12 | [ ] Sales Orders | `GET /api/resource/Sales Order?filters=[["custom_distribution_store","=","<store>"]]` | List, filter, search |
-| 2.13 | [ ] Order Detail | `GET /api/resource/Sales Order/<id>` | Header, items, totals |
-| 2.14 | [ ] Delivery Notes | `GET /api/resource/Delivery Note?filters=[...]` | List |
-| 2.15 | [ ] Profile | — | User info, stores, logout |
+| # | Screen | Endpoint | Status |
+|---|--------|----------|--------|
+| 2.1 | Dashboard | `esf.api.store.get_dashboard` | [x] Done |
+| 2.2 | Store Detail | `GET /api/resource/Distribution Store/<id>` | [x] Done |
+| 2.3 | Stock Levels | `esf.api.store.get_stock_levels` | [ ] Todo |
+| 2.4 | Farm Owners List | `GET /api/resource/Farm Owner` | [x] Done |
+| 2.5 | Farm Owner Detail | `GET /api/resource/Farm Owner/<id>` | [x] Done |
+| 2.6 | Farm Detail | `GET /api/resource/Farm/<id>` | [x] Done |
+| 2.7 | Garden Detail | `GET /api/resource/Garden/<id>` | [x] Done |
+| 2.8 | Cultivation Logs List | `GET /api/resource/Cultivation Log` | [ ] Todo |
+| 2.9 | Cultivation Detail | `GET /api/resource/Cultivation Log/<id>` | [x] Done |
+| 2.10 | Care Logs List | `GET /api/resource/Care Log` | [ ] Todo |
+| 2.11 | Care Log Detail | `GET /api/resource/Care Log/<id>` | [x] Done |
+| 2.12 | Sales Orders | `GET /api/resource/Sales Order?filters=[...]` | [x] Done |
+| 2.13 | Order Detail | `GET /api/resource/Sales Order/<id>` | [x] Done |
+| 2.14 | Delivery Notes | `GET /api/resource/Delivery Note?filters=[...]` | [ ] Todo |
+| 2.15 | Profile | — | [x] Done |
+
+**Phase 1A Progress: 11/15 screens completed**
 
 ---
 
