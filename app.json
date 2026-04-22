@@ -7,8 +7,10 @@
     "icon": "./assets/images/icon.png",
     "scheme": "smartfarm",
     "userInterfaceStyle": "automatic",
+    "backgroundColor": "#00D09E",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "backgroundColor": "#00D09E"
     },
     "android": {
       "adaptiveIcon": {
@@ -28,13 +30,14 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#00D09E",
           "android": {
             "image": "./assets/images/splash-icon.png",
             "imageWidth": 76
           }
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,

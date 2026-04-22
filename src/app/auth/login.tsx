@@ -1,8 +1,14 @@
+/**
+ * Login Screen
+ * Handles user authentication
+ */
+
 import settingApp from '@/settingApp';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -12,20 +18,54 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function LoginScreen() {
-  const router = useRouter();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [secureText, setSecureText] = useState(true);
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = () => {
-    router.replace('/(tabs)/');
+  const handleLogin = async () => {
+    // Validate inputs
+    if (!email.trim()) {
+      setError('Vui lòng nhập tên đăng nhập hoặc email');
+      return;
+    }
+    if (!password.trim()) {
+      setError('Vui lòng nhập mật khẩu');
+      return;
+    }
+
+    setError('');
+    setIsLoading(true);
+
+    try {
+      console.log('[Login] Attempting login with:', email.trim());
+      await login(email.trim(), password);
+      // Navigation is handled by AuthContext
+    } catch (err) {
+      console.error('[Login] Error:', err);
+      const message = err instanceof Error ? err.message : 'Đăng nhập thất bại';
+
+      // Check for common errors
+      if (message.includes('401') || message.includes('Invalid')) {
+        setError('Tên đăng nhập hoặc mật khẩu không đúng');
+      } else if (message.includes('Network') || message.includes('timeout')) {
+        setError('Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.');
+      } else {
+        setError(message);
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <View style={styles.container}>
-      {/* Header xanh */}
+      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.welcomeText}>Chào mừng</Text>
         <Text style={styles.welcomeText}>bạn đến với SmartFarm</Text>
@@ -42,6 +82,14 @@ export default function LoginScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.card}>
+            {/* Error Message */}
+            {error ? (
+              <View style={styles.errorContainer}>
+                <Ionicons name="alert-circle" size={18} color="#EF4444" />
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            ) : null}
+
             {/* Email */}
             <Text style={styles.label}>Tên đăng nhập hoặc Email</Text>
             <TextInput
@@ -49,9 +97,14 @@ export default function LoginScreen() {
               placeholder="example@example.com"
               placeholderTextColor="#A0A0A0"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(text) => {
+                setEmail(text);
+                setError('');
+              }}
               keyboardType="email-address"
               autoCapitalize="none"
+              autoCorrect={false}
+              editable={!isLoading}
             />
 
             {/* Password */}
@@ -62,12 +115,17 @@ export default function LoginScreen() {
                 placeholder="••••••••"
                 placeholderTextColor="#A0A0A0"
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  setError('');
+                }}
                 secureTextEntry={secureText}
+                editable={!isLoading}
               />
               <TouchableOpacity
                 style={styles.eyeIcon}
                 onPress={() => setSecureText(!secureText)}
+                disabled={isLoading}
               >
                 <Ionicons
                   name={secureText ? 'eye-off-outline' : 'eye-outline'}
@@ -78,20 +136,62 @@ export default function LoginScreen() {
             </View>
 
             {/* Login button */}
-            <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-              <Text style={styles.loginButtonText}>Đăng nhập</Text>
+            <TouchableOpacity
+              style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
+              onPress={handleLogin}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <ActivityIndicator color="#FFFFFF" size="small" />
+              ) : (
+                <Text style={styles.loginButtonText}>Đăng nhập</Text>
+              )}
             </TouchableOpacity>
 
             {/* Forgot password */}
-            <TouchableOpacity style={styles.forgotButton}>
+            <TouchableOpacity style={styles.forgotButton} disabled={isLoading}>
               <Text style={styles.forgotText}>Quên mật khẩu?</Text>
             </TouchableOpacity>
 
             {/* Contact store */}
-            <TouchableOpacity style={styles.contactButton}>
+            <TouchableOpacity style={styles.contactButton} disabled={isLoading}>
               <Text style={styles.contactText}>Liên hệ nhân viên cửa hàng</Text>
             </TouchableOpacity>
 
+            {/* Dev Mode Credentials */}
+            {__DEV__ && (
+              <View style={styles.devModeContainer}>
+                <Text style={styles.devModeTitle}>Test Accounts (Dev Mode)</Text>
+                <TouchableOpacity
+                  style={styles.devAccount}
+                  onPress={() => {
+                    setEmail('store@test.com');
+                    setPassword('123456');
+                  }}
+                >
+                  <Text style={styles.devAccountText}>Store Employee: store@test.com</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.devAccount}
+                  onPress={() => {
+                    setEmail('farm@test.com');
+                    setPassword('123456');
+                  }}
+                >
+                  <Text style={styles.devAccountText}>Farm Owner: farm@test.com</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.devAccount}
+                  onPress={() => {
+                    setEmail('investor@test.com');
+                    setPassword('123456');
+                  }}
+                >
+                  <Text style={styles.devAccountText}>Investor: investor@test.com</Text>
+                </TouchableOpacity>
+                <Text style={styles.devAccountHint}>Password: 123456</Text>
+              </View>
+            )}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -129,6 +229,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 32,
     paddingBottom: 40,
+  },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEF2F2',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    gap: 8,
+  },
+  errorText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#EF4444',
   },
   label: {
     fontSize: 14,
@@ -172,6 +286,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 28,
   },
+  loginButtonDisabled: {
+    opacity: 0.7,
+  },
   loginButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
@@ -194,5 +311,37 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: settingApp.green_primery,
     textDecorationLine: 'underline',
+  },
+  devModeContainer: {
+    marginTop: 32,
+    padding: 16,
+    backgroundColor: '#FFF8E1',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#FFE082',
+  },
+  devModeTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#F57C00',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  devAccount: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    marginBottom: 6,
+  },
+  devAccountText: {
+    fontSize: 13,
+    color: '#333',
+  },
+  devAccountHint: {
+    fontSize: 12,
+    color: '#888',
+    textAlign: 'center',
+    marginTop: 8,
   },
 });
