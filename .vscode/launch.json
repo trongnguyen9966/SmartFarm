@@ -1,0 +1,22 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Expo (iOS)",
+      "type": "expo",
+      "request": "launch",
+      "platform": "ios"
+    },
+    {
+      "name": "Debug Expo (Android)",
+      "type": "expo",
+      "request": "launch",
+      "platform": "android"
+    },
+    {
+      "name": "Attach to Expo",
+      "type": "expo",
+      "request": "attach"
+    }
+  ]
+}

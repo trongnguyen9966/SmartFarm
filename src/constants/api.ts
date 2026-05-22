@@ -2,14 +2,14 @@
  * API Configuration
  */
 
-// Base URL for Frappe backend - update this with your actual server URL
-export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
+// Base URL for Frappe backend - configured via EXPO_PUBLIC_API_URL environment variable
+export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://34.27.1.2';
 
 // API Endpoints
 export const API_ENDPOINTS = {
   // Auth
   AUTH: {
-    LOGIN: '/api/method/esf.api.auth.login',
+    LOGIN: '/login',
     SESSION_INFO: '/api/method/esf.api.auth.get_session_info',
   },
 

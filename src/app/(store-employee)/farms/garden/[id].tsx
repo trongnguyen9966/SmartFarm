@@ -16,14 +16,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import settingApp from '@/settingApp';
 import { Card, Badge } from '@/components/ui';
-import {
-  mockGardens,
-  mockFarms,
-  mockFarmOwners,
-  getCultivationLogsByGarden,
-  getCareLogsByCultivation,
-} from '@/services/mock/storeData';
-import type { Garden, Farm, FarmOwner, CultivationLog, CareLog } from '@/types/models';
+import * as storeApi from '@/services/api/store';
+import type { Garden, Farm, FarmOwner, CultivationLog } from '@/types/models';
 
 export default function GardenDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -41,30 +35,39 @@ export default function GardenDetailScreen() {
 
   const fetchData = async () => {
     setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    try {
+      if (!id) return;
 
-    const foundGarden = mockGardens.find((g) => g.name === id);
-    setGarden(foundGarden || null);
+      // Fetch garden data first
+      const gardenData = await storeApi.getGardenById(id);
+      setGarden(gardenData);
 
-    if (foundGarden) {
-      const foundFarm = mockFarms.find((f) => f.name === foundGarden.farm);
-      setFarm(foundFarm || null);
+      // Fetch farm, owner, and cultivations in parallel
+      const [farmData, ownerData, cultivationsData] = await Promise.all([
+        storeApi.getFarmById(gardenData.farm),
+        storeApi.getFarmOwnerById(gardenData.farm_owner),
+        storeApi.getCultivationLogsByGarden(id),
+      ]);
 
-      const foundOwner = mockFarmOwners.find((o) => o.name === foundGarden.farm_owner);
-      setOwner(foundOwner || null);
-
-      const gardenCultivations = getCultivationLogsByGarden(foundGarden.name);
-      setCultivations(gardenCultivations);
+      setFarm(farmData);
+      setOwner(ownerData);
+      setCultivations(cultivationsData);
 
       // Get care log counts for each cultivation
       const counts: Record<string, number> = {};
-      gardenCultivations.forEach((cult) => {
-        counts[cult.name] = getCareLogsByCultivation(cult.name).length;
-      });
+      await Promise.all(
+        cultivationsData.map(async (cult) => {
+          const careLogs = await storeApi.getCareLogsByCultivation(cult.name);
+          counts[cult.name] = careLogs.length;
+        })
+      );
       setCareLogCounts(counts);
+    } catch (error) {
+      console.error('[GardenDetailScreen] Error fetching data:', error);
+      setGarden(null);
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   const formatDate = (dateStr: string) => {

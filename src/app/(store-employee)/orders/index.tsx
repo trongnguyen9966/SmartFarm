@@ -16,7 +16,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import settingApp from '@/settingApp';
 import { Card, SearchBar, Badge, EmptyState } from '@/components/ui';
-import { mockSalesOrders } from '@/services/mock/storeData';
+import * as storeApi from '@/services/api/store';
 import type { SalesOrder } from '@/types/models';
 
 type FilterStatus = 'all' | 'pending' | 'completed';
@@ -34,9 +34,14 @@ export default function OrdersScreen() {
 
   const fetchData = async () => {
     setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    setOrders(mockSalesOrders);
-    setIsLoading(false);
+    try {
+      const ordersData = await storeApi.getSalesOrders();
+      setOrders(ordersData);
+    } catch (error) {
+      console.error('[OrdersScreen] Error fetching orders:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const filteredOrders = useMemo(() => {

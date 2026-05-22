@@ -7,7 +7,8 @@ import type { StoreDashboardResponse } from '@/types/api';
 import * as storeApi from '@/services/api/store';
 import { mockDashboard } from '@/services/mock/storeData';
 
-const MOCK_ENABLED = __DEV__;
+// Set to false to use real API instead of mock data
+const MOCK_ENABLED = false;
 
 interface UseStoreDashboardResult {
   data: StoreDashboardResponse | null;

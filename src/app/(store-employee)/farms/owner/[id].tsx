@@ -17,7 +17,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import settingApp from '@/settingApp';
 import { Card, Badge } from '@/components/ui';
-import { mockFarmOwners, getFarmsByOwner } from '@/services/mock/storeData';
+import * as storeApi from '@/services/api/store';
 import type { FarmOwner, Farm } from '@/types/models';
 
 export default function FarmOwnerDetailScreen() {
@@ -33,17 +33,22 @@ export default function FarmOwnerDetailScreen() {
 
   const fetchData = async () => {
     setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    try {
+      if (!id) return;
 
-    const foundOwner = mockFarmOwners.find((o) => o.name === id);
-    setOwner(foundOwner || null);
+      const [ownerData, farmsData] = await Promise.all([
+        storeApi.getFarmOwnerById(id),
+        storeApi.getFarmsByOwner(id),
+      ]);
 
-    if (foundOwner) {
-      const ownerFarms = getFarmsByOwner(foundOwner.name);
-      setFarms(ownerFarms);
+      setOwner(ownerData);
+      setFarms(farmsData);
+    } catch (error) {
+      console.error('[FarmOwnerDetailScreen] Error fetching data:', error);
+      setOwner(null);
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   const handleCall = (phone: string) => {

@@ -16,7 +16,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import settingApp from '@/settingApp';
 import { Card, Badge } from '@/components/ui';
-import { mockStores, mockStockLevels } from '@/services/mock/storeData';
+import * as storeApi from '@/services/api/store';
 import type { DistributionStore } from '@/types/models';
 import type { StockLevelsResponse } from '@/types/api';
 
@@ -33,13 +33,22 @@ export default function StoreDetailScreen() {
 
   const fetchData = async () => {
     setIsLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    try {
+      if (!id) return;
 
-    const foundStore = mockStores.find((s) => s.name === id);
-    setStore(foundStore || null);
-    setStock(mockStockLevels);
-    setIsLoading(false);
+      const [storeData, stockData] = await Promise.all([
+        storeApi.getStoreById(id),
+        storeApi.getStockLevels({ distribution_store: id }),
+      ]);
+
+      setStore(storeData);
+      setStock(stockData);
+    } catch (error) {
+      console.error('[StoreDetailScreen] Error fetching data:', error);
+      setStore(null);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (isLoading) {

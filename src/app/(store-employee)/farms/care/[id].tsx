@@ -16,11 +16,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import settingApp from '@/settingApp';
 import { Card, Badge } from '@/components/ui';
-import {
-  mockCareLogs,
-  mockCultivationLogs,
-  mockGardens,
-} from '@/services/mock/storeData';
+import * as storeApi from '@/services/api/store';
 import type { CareLog, CultivationLog, Garden } from '@/types/models';
 
 export default function CareLogDetailScreen() {
@@ -37,22 +33,27 @@ export default function CareLogDetailScreen() {
 
   const fetchData = async () => {
     setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    try {
+      if (!id) return;
 
-    const foundCareLog = mockCareLogs.find((c) => c.name === id);
-    setCareLog(foundCareLog || null);
+      // Fetch care log first
+      const careLogData = await storeApi.getCareLogById(id);
+      setCareLog(careLogData);
 
-    if (foundCareLog) {
-      const foundCultivation = mockCultivationLogs.find(
-        (c) => c.name === foundCareLog.cultivation_log
-      );
-      setCultivation(foundCultivation || null);
+      // Fetch cultivation and garden in parallel
+      const [cultivationData, gardenData] = await Promise.all([
+        storeApi.getCultivationLogById(careLogData.cultivation_log),
+        storeApi.getGardenById(careLogData.garden),
+      ]);
 
-      const foundGarden = mockGardens.find((g) => g.name === foundCareLog.garden);
-      setGarden(foundGarden || null);
+      setCultivation(cultivationData);
+      setGarden(gardenData);
+    } catch (error) {
+      console.error('[CareLogDetailScreen] Error fetching data:', error);
+      setCareLog(null);
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   const formatDate = (dateStr: string) => {

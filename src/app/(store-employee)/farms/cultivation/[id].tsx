@@ -16,12 +16,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import settingApp from '@/settingApp';
 import { Card, Badge } from '@/components/ui';
-import {
-  mockCultivationLogs,
-  mockGardens,
-  mockFarms,
-  getCareLogsByCultivation,
-} from '@/services/mock/storeData';
+import * as storeApi from '@/services/api/store';
 import type { CultivationLog, Garden, Farm, CareLog } from '@/types/models';
 
 export default function CultivationDetailScreen() {
@@ -39,23 +34,29 @@ export default function CultivationDetailScreen() {
 
   const fetchData = async () => {
     setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    try {
+      if (!id) return;
 
-    const foundCultivation = mockCultivationLogs.find((c) => c.name === id);
-    setCultivation(foundCultivation || null);
+      // Fetch cultivation log first
+      const cultivationData = await storeApi.getCultivationLogById(id);
+      setCultivation(cultivationData);
 
-    if (foundCultivation) {
-      const foundGarden = mockGardens.find((g) => g.name === foundCultivation.garden);
-      setGarden(foundGarden || null);
+      // Fetch garden, farm, and care logs in parallel
+      const [gardenData, farmData, careLogsData] = await Promise.all([
+        storeApi.getGardenById(cultivationData.garden),
+        storeApi.getFarmById(cultivationData.farm),
+        storeApi.getCareLogsByCultivation(id),
+      ]);
 
-      const foundFarm = mockFarms.find((f) => f.name === foundCultivation.farm);
-      setFarm(foundFarm || null);
-
-      const logs = getCareLogsByCultivation(foundCultivation.name);
-      setCareLogs(logs);
+      setGarden(gardenData);
+      setFarm(farmData);
+      setCareLogs(careLogsData);
+    } catch (error) {
+      console.error('[CultivationDetailScreen] Error fetching data:', error);
+      setCultivation(null);
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   const formatDate = (dateStr: string) => {

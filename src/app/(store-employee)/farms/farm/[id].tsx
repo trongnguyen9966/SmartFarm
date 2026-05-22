@@ -16,12 +16,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import settingApp from '@/settingApp';
 import { Card, Badge } from '@/components/ui';
-import {
-  mockFarms,
-  mockFarmOwners,
-  getGardensByFarm,
-  getCultivationLogsByGarden,
-} from '@/services/mock/storeData';
+import * as storeApi from '@/services/api/store';
 import type { Farm, FarmOwner, Garden, CultivationLog } from '@/types/models';
 
 export default function FarmDetailScreen() {
@@ -39,27 +34,37 @@ export default function FarmDetailScreen() {
 
   const fetchData = async () => {
     setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    try {
+      if (!id) return;
 
-    const foundFarm = mockFarms.find((f) => f.name === id);
-    setFarm(foundFarm || null);
+      // Fetch farm data first
+      const farmData = await storeApi.getFarmById(id);
+      setFarm(farmData);
 
-    if (foundFarm) {
-      const foundOwner = mockFarmOwners.find((o) => o.name === foundFarm.farm_owner);
-      setOwner(foundOwner || null);
+      // Fetch owner and gardens in parallel
+      const [ownerData, gardensData] = await Promise.all([
+        storeApi.getFarmOwnerById(farmData.farm_owner),
+        storeApi.getGardensByFarm(id),
+      ]);
 
-      const farmGardens = getGardensByFarm(foundFarm.name);
-      setGardens(farmGardens);
+      setOwner(ownerData);
+      setGardens(gardensData);
 
       // Get cultivation logs for each garden
       const cultMap: Record<string, CultivationLog[]> = {};
-      farmGardens.forEach((garden) => {
-        cultMap[garden.name] = getCultivationLogsByGarden(garden.name);
-      });
+      await Promise.all(
+        gardensData.map(async (garden) => {
+          const logs = await storeApi.getCultivationLogsByGarden(garden.name);
+          cultMap[garden.name] = logs;
+        })
+      );
       setCultivationMap(cultMap);
+    } catch (error) {
+      console.error('[FarmDetailScreen] Error fetching data:', error);
+      setFarm(null);
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   const getActiveCultivations = (gardenId: string): number => {

@@ -8,6 +8,7 @@
     "scheme": "smartfarm",
     "userInterfaceStyle": "automatic",
     "backgroundColor": "#00D09E",
+    "jsEngine": "hermes",
     "ios": {
       "icon": "./assets/expo.icon",
       "backgroundColor": "#00D09E"
@@ -37,7 +38,10 @@
           }
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-font",
+      "expo-image",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,

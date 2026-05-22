@@ -16,6 +16,11 @@ export const setTokenGetter = (
   getAuthToken = getter;
 };
 
+// Log API configuration in development
+if (__DEV__) {
+  console.log('[API] Base URL:', API_BASE_URL);
+}
+
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -26,7 +31,7 @@ const apiClient: AxiosInstance = axios.create({
   },
 });
 
-// Request interceptor - add auth header
+// Request interceptor - add auth header and logging
 apiClient.interceptors.request.use(
   async (config) => {
     if (getAuthToken) {
@@ -35,16 +40,51 @@ apiClient.interceptors.request.use(
         config.headers.Authorization = `token ${tokens.apiKey}:${tokens.apiSecret}`;
       }
     }
+
+    if (__DEV__) {
+      console.log(`[API] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+      console.tron?.display({
+        name: 'API REQUEST',
+        value: { method: config.method?.toUpperCase(), url: config.url, data: config.data },
+        preview: `${config.method?.toUpperCase()} ${config.url}`,
+      });
+    }
+
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// Response interceptor - handle errors
+// Response interceptor - handle errors and logging
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (__DEV__) {
+      console.log(`[API] Response ${response.status}:`, response.config.url);
+      console.tron?.display({
+        name: 'API RESPONSE',
+        value: { status: response.status, url: response.config.url, data: response.data },
+        preview: `${response.status} ${response.config.url}`,
+        important: false,
+      });
+    }
+    return response;
+  },
   (error: AxiosError<ApiError>) => {
     const status = error.response?.status;
+
+    if (__DEV__) {
+      console.error(`[API] Error ${status}:`, error.config?.url);
+      console.error('[API] Error details:', error.message);
+      if (error.response?.data) {
+        console.error('[API] Response data:', JSON.stringify(error.response.data, null, 2));
+      }
+      console.tron?.display({
+        name: 'API ERROR',
+        value: { status, url: error.config?.url, message: error.message, data: error.response?.data },
+        preview: `${status} ${error.config?.url}`,
+        important: true,
+      });
+    }
 
     // Parse server messages for validation errors
     if (status === 417 && error.response?.data?._server_messages) {

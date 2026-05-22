@@ -17,13 +17,14 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import settingApp from '@/settingApp';
 import { Card, SearchBar, Badge, EmptyState } from '@/components/ui';
-import { mockFarmOwners, getFarmsByOwner } from '@/services/mock/storeData';
-import type { FarmOwner } from '@/types/models';
+import * as storeApi from '@/services/api/store';
+import type { FarmOwner, Farm } from '@/types/models';
 
 export default function FarmOwnersScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [farmOwners, setFarmOwners] = useState<FarmOwner[]>([]);
+  const [farms, setFarms] = useState<Farm[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -33,10 +34,23 @@ export default function FarmOwnersScreen() {
 
   const fetchData = async () => {
     setIsLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    setFarmOwners(mockFarmOwners);
-    setIsLoading(false);
+    try {
+      const [ownersData, farmsData] = await Promise.all([
+        storeApi.getFarmOwners(),
+        storeApi.getFarms(),
+      ]);
+      setFarmOwners(ownersData);
+      setFarms(farmsData);
+    } catch (error) {
+      console.error('[FarmOwnersScreen] Error fetching data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Get farms count for a specific owner
+  const getFarmCountForOwner = (ownerId: string): number => {
+    return farms.filter((f) => f.farm_owner === ownerId).length;
   };
 
   // Filter farm owners by search query
@@ -61,7 +75,7 @@ export default function FarmOwnersScreen() {
   };
 
   const renderFarmOwner = ({ item }: { item: FarmOwner }) => {
-    const farms = getFarmsByOwner(item.name);
+    const farmCount = getFarmCountForOwner(item.name);
 
     return (
       <TouchableOpacity
@@ -79,7 +93,7 @@ export default function FarmOwnersScreen() {
               <Text style={styles.ownerId}>{item.name}</Text>
             </View>
             <Badge
-              label={`${farms.length} trại`}
+              label={`${farmCount} trại`}
               variant="success"
             />
           </View>

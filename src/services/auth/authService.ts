@@ -12,7 +12,7 @@ import * as TokenStorage from './tokenStorage';
 // Mock Data for Development
 // ============================================
 
-const MOCK_ENABLED = __DEV__; // Enable mock in development mode
+const MOCK_ENABLED = false; // Disabled - using real API at http://34.27.1.2
 
 const MOCK_USERS: Record<string, { password: string; data: LoginResponse }> = {
   // Store Employee

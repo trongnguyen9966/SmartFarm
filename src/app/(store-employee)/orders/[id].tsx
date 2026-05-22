@@ -16,7 +16,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import settingApp from '@/settingApp';
 import { Card, Badge } from '@/components/ui';
-import { mockSalesOrders, mockDeliveryNotes } from '@/services/mock/storeData';
+import * as storeApi from '@/services/api/store';
 import type { SalesOrder, DeliveryNote } from '@/types/models';
 
 export default function OrderDetailScreen() {
@@ -32,20 +32,26 @@ export default function OrderDetailScreen() {
 
   const fetchData = async () => {
     setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    try {
+      if (!id) return;
 
-    const foundOrder = mockSalesOrders.find((o) => o.name === id);
-    setOrder(foundOrder || null);
+      const orderData = await storeApi.getSalesOrderById(id);
+      setOrder(orderData);
 
-    // Find related delivery notes (in real app, this would be linked)
-    if (foundOrder) {
-      const relatedDNs = mockDeliveryNotes.filter(
-        (dn) => dn.customer === foundOrder.customer
-      );
-      setDeliveryNotes(relatedDNs);
+      // Find related delivery notes for the same customer
+      if (orderData) {
+        const allDeliveryNotes = await storeApi.getDeliveryNotes();
+        const relatedDNs = allDeliveryNotes.filter(
+          (dn) => dn.customer === orderData.customer
+        );
+        setDeliveryNotes(relatedDNs);
+      }
+    } catch (error) {
+      console.error('[OrderDetailScreen] Error fetching data:', error);
+      setOrder(null);
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   const formatDate = (dateStr: string) => {
