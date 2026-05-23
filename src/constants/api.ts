@@ -9,7 +9,7 @@ export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://34.27.1.2
 export const API_ENDPOINTS = {
   // Auth
   AUTH: {
-    LOGIN: '/login',
+    LOGIN: '/api/method/login',
     SESSION_INFO: '/api/method/esf.api.auth.get_session_info',
   },
 

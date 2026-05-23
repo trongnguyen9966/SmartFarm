@@ -3,12 +3,12 @@
  * Handles user authentication
  */
 
+import { useAuth } from '@/hooks/useAuth';
 import settingApp from '@/settingApp';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -16,9 +16,8 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
-import { useAuth } from '@/hooks/useAuth';
 
 export default function LoginScreen() {
   const { login } = useAuth();
@@ -43,7 +42,6 @@ export default function LoginScreen() {
     setIsLoading(true);
 
     try {
-      console.log('[Login] Attempting login with:', email.trim());
       await login(email.trim(), password);
       // Navigation is handled by AuthContext
     } catch (err) {

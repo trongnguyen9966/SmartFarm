@@ -48,10 +48,7 @@ export default function SplashPage() {
       hasNavigated.current = true;
 
       if (isAuthenticated && user) {
-        // User is logged in, AuthContext will handle navigation
-        // Just trigger by going to a protected route
-        const { getRouteForRole } = require('@/services/auth/authService');
-        router.replace(getRouteForRole(user.primaryRole));
+        router.replace('/(tabs)' as any);
       } else {
         router.replace('/auth/login');
       }

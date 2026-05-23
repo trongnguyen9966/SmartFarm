@@ -3,44 +3,29 @@
  * Base HTTP client for Frappe REST API
  */
 
-import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from 'axios';
+import axios, { AxiosError, AxiosInstance } from 'axios';
 import { API_BASE_URL } from '@/constants/api';
 import type { ApiResponse, ApiError } from '@/types/api';
-
-// Token getter function - will be set by auth service
-let getAuthToken: (() => Promise<{ apiKey: string; apiSecret: string } | null>) | null = null;
-
-export const setTokenGetter = (
-  getter: () => Promise<{ apiKey: string; apiSecret: string } | null>
-) => {
-  getAuthToken = getter;
-};
 
 // Log API configuration in development
 if (__DEV__) {
   console.log('[API] Base URL:', API_BASE_URL);
 }
 
-// Create axios instance
+// Create axios instance with cookie-based auth
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30000,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
   },
 });
 
-// Request interceptor - add auth header and logging
+// Request interceptor - logging
 apiClient.interceptors.request.use(
-  async (config) => {
-    if (getAuthToken) {
-      const tokens = await getAuthToken();
-      if (tokens) {
-        config.headers.Authorization = `token ${tokens.apiKey}:${tokens.apiSecret}`;
-      }
-    }
-
+  (config) => {
     if (__DEV__) {
       console.log(`[API] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
       console.tron?.display({

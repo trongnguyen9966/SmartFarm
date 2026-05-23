@@ -51,18 +51,26 @@ export interface FarmOwnerContext {
   owner_name: string;
 }
 
+// Response from Frappe built-in /api/method/login
+export interface FrappeLoginResponse {
+  message: string; // "Logged In"
+  home_page: string;
+  full_name: string;
+}
+
+// Unified user context used throughout the app
+export interface UserContext {
+  stores?: StoreContext[];
+  farm_owner?: FarmOwnerContext;
+  assigned_stores?: StoreContext[];
+}
+
 export interface LoginResponse {
   user: string;
   full_name: string;
   roles: string[];
   primary_role: UserRole;
-  api_key: string;
-  api_secret: string;
-  context: {
-    stores?: StoreContext[];
-    farm_owner?: FarmOwnerContext;
-    assigned_stores?: StoreContext[];
-  };
+  context: UserContext;
 }
 
 export interface SessionInfoResponse {
@@ -70,11 +78,7 @@ export interface SessionInfoResponse {
   full_name: string;
   roles: string[];
   primary_role: UserRole;
-  context: {
-    stores?: StoreContext[];
-    farm_owner?: FarmOwnerContext;
-    assigned_stores?: StoreContext[];
-  };
+  context: UserContext;
 }
 
 // ============================================

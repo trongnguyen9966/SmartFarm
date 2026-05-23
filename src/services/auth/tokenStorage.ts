@@ -11,6 +11,8 @@ const STORAGE_KEYS = {
   API_KEY: 'esf_api_key',
   API_SECRET: 'esf_api_secret',
   USER_DATA: 'esf_user_data',
+  CRED_USR: 'esf_cred_usr',
+  CRED_PWD: 'esf_cred_pwd',
 } as const;
 
 // Check if secure store is available (not available on web)
@@ -64,7 +66,7 @@ export interface StoredUserData {
   fullName: string;
   roles: string[];
   primaryRole: string;
-  context: Record<string, unknown>;
+  context: unknown;
 }
 
 /**
@@ -133,16 +135,51 @@ export async function clearUserData(): Promise<void> {
 }
 
 /**
- * Clear all auth data (tokens + user data)
+ * Save login credentials securely (for cookie-based re-login)
+ */
+export async function saveCredentials(username: string, password: string): Promise<void> {
+  await Promise.all([
+    saveSecure(STORAGE_KEYS.CRED_USR, username),
+    saveSecure(STORAGE_KEYS.CRED_PWD, password),
+  ]);
+}
+
+/**
+ * Get stored login credentials
+ */
+export async function getCredentials(): Promise<{ username: string; password: string } | null> {
+  const [username, password] = await Promise.all([
+    getSecure(STORAGE_KEYS.CRED_USR),
+    getSecure(STORAGE_KEYS.CRED_PWD),
+  ]);
+
+  if (username && password) {
+    return { username, password };
+  }
+  return null;
+}
+
+/**
+ * Clear stored credentials
+ */
+export async function clearCredentials(): Promise<void> {
+  await Promise.all([
+    deleteSecure(STORAGE_KEYS.CRED_USR),
+    deleteSecure(STORAGE_KEYS.CRED_PWD),
+  ]);
+}
+
+/**
+ * Clear all auth data (tokens + credentials + user data)
  */
 export async function clearAll(): Promise<void> {
-  await Promise.all([clearTokens(), clearUserData()]);
+  await Promise.all([clearTokens(), clearCredentials(), clearUserData()]);
 }
 
 /**
  * Check if user has stored credentials
  */
 export async function hasStoredCredentials(): Promise<boolean> {
-  const tokens = await getTokens();
-  return tokens !== null;
+  const creds = await getCredentials();
+  return creds !== null;
 }
