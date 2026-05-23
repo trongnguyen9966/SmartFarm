@@ -83,16 +83,17 @@ Users interact with a consistent set of UI components throughout the app, includ
 
 ### Functional Requirements
 
-- **FR-001**: System MUST provide a base HTTP client that automatically injects authentication headers into all API requests
-- **FR-002**: System MUST store authentication tokens (api_key and api_secret) securely using device secure storage
+- **FR-001**: System MUST use `frappe-react-sdk` for API communication with automatic cookie-based session management
+- **FR-002**: System MUST store login credentials (username/password) securely using expo-secure-store for session restoration
 - **FR-003**: System MUST handle API error responses appropriately: 401 redirects to login, 403 shows access denied, 417 shows validation errors
-- **FR-004**: System MUST provide an authentication context that manages login state across the entire application
-- **FR-005**: System MUST route users to role-specific tab navigation based on their primary_role after authentication
+- **FR-004**: System MUST provide an AuthContext that manages login state via `useFrappeAuth` hook throughout the application
+- **FR-005**: System MUST route users to role-specific tab navigation based on their primary_role after calling get_session_info
 - **FR-006**: System MUST provide three distinct tab layouts: Store Employee (Home/Farms/Orders/Profile), Farm Owner (Home/Gardens/Care Logs/Profile), and Investor (Home/Stores/Reports/Profile)
-- **FR-007**: System MUST persist authentication state so users remain logged in across app restarts
-- **FR-008**: System MUST provide a login screen that accepts email and password credentials
+- **FR-007**: System MUST persist credentials securely and re-authenticate on app restart to restore sessions
+- **FR-008**: System MUST provide a login screen that accepts username/email and password credentials
 - **FR-009**: System MUST provide reusable UI components: LoadingScreen, ErrorScreen, EmptyState, Card, Badge, ListItem, and SearchBar
 - **FR-010**: System MUST provide strongly-typed data models for all API response types and business entities
+- **FR-011**: System MUST implement a two-step login flow: (1) POST /api/method/login, (2) POST get_session_info for roles/context
 
 ### Key Entities
 
@@ -115,10 +116,11 @@ Users interact with a consistent set of UI components throughout the app, includ
 
 ## Assumptions
 
-- Users have the Expo-compatible mobile devices (iOS 13+ or Android 8+)
+- Users have Expo-compatible mobile devices (iOS 13+ or Android 8+)
 - Users have stable internet connectivity for initial login (offline mode not in scope for Phase 0)
 - The backend ESF API is available and returns responses in the documented format
 - The app uses Expo framework with Expo Router for navigation
-- expo-secure-store package is available for secure token storage
-- axios is the HTTP client library for API communication
-- The backend login endpoint returns user role information including primary_role for routing decisions
+- expo-secure-store package is available for secure credential storage
+- frappe-react-sdk is used for API communication with cookie-based session management
+- The backend provides a custom `esf.api.auth.get_session_info` endpoint that returns user roles and primary_role for routing
+- Frappe's built-in `/api/method/login` endpoint is used for initial authentication (via useFrappeAuth hook)

@@ -10,7 +10,8 @@ Phase 0 Foundation establishes the core infrastructure for the ESF Mobile App: a
 ## Technical Context
 
 **Language/Version**: TypeScript 5.9, React 19.2, React Native 0.83
-**Primary Dependencies**: Expo 55, Expo Router 55, axios 1.15, expo-secure-store 55
+**Primary Dependencies**: Expo 55, Expo Router 55, frappe-react-sdk 1.x, expo-secure-store 55
+**API Client**: frappe-react-sdk (cookie-based session management via useFrappeAuth hook)
 **Storage**: expo-secure-store for credentials, Frappe/ERPNext backend for data
 **Testing**: Manual testing (no test framework currently configured)
 **Target Platform**: iOS 13+, Android 8+, Web (via react-native-web)
@@ -18,6 +19,16 @@ Phase 0 Foundation establishes the core infrastructure for the ESF Mobile App: a
 **Performance Goals**: Login under 10 seconds, smooth 60fps navigation
 **Constraints**: Must work offline-tolerant for UI (API requires connectivity)
 **Scale/Scope**: 3 user roles, ~50 screens total across all phases
+
+### Authentication Flow
+
+1. User enters credentials on login screen
+2. App calls `useFrappeAuth().login()` → POST `/api/method/login`
+3. Frappe returns `{ message: "Logged In", full_name }` and sets session cookie
+4. App calls `useFrappePostCall()` → POST `/api/method/esf.api.auth.get_session_info`
+5. Backend returns `{ user, full_name, roles, primary_role, context }`
+6. App stores credentials securely for session restoration
+7. App navigates to role-specific home screen based on primary_role
 
 ## Constitution Check
 
@@ -84,22 +95,9 @@ src/
 ├── hooks/
 │   └── useAuth.ts                # Auth hook for components
 ├── services/
-│   ├── api/
-│   │   ├── client.ts             # Base HTTP client with auth
-│   │   ├── store.ts              # Store-related API calls
-│   │   └── resources/            # DocType CRUD operations
-│   │       ├── distributionStore.ts
-│   │       ├── farmOwner.ts
-│   │       ├── farm.ts
-│   │       ├── garden.ts
-│   │       ├── cultivationLog.ts
-│   │       ├── careLog.ts
-│   │       ├── salesOrder.ts
-│   │       ├── deliveryNote.ts
-│   │       └── index.ts
+│   ├── storage.ts                # AsyncStorage wrapper
 │   └── auth/
-│       ├── authService.ts        # Auth business logic
-│       └── tokenStorage.ts       # Secure token storage
+│       └── tokenStorage.ts       # Secure credential storage (expo-secure-store)
 ├── constants/
 │   ├── api.ts                    # API base URL config
 │   └── theme.ts                  # Theme constants

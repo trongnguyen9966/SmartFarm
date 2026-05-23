@@ -13,7 +13,7 @@ Phase 0 establishes the foundational data models for authentication, user sessio
 
 ### UserSession
 
-Represents an authenticated user's session state.
+Represents an authenticated user's session state in the app.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
@@ -21,27 +21,44 @@ Represents an authenticated user's session state.
 | fullName | string | Yes | User's display name |
 | roles | string[] | Yes | Array of all assigned roles |
 | primaryRole | string | Yes | Primary role for navigation routing |
-| apiKey | string | Yes | API key for authentication (stored securely) |
-| apiSecret | string | Yes | API secret for authentication (stored securely) |
 | context | object | Yes | Role-specific context data |
 
 **Context Structure by Role**:
-- Store Employee: `{ stores: DistributionStore[] }`
-- Farm Owner: `{ farm_owner: string }` (Farm Owner document name)
-- Investor: `{ stores: DistributionStore[] }` (assigned stores)
+- Store Employee: `{ stores: StoreContext[] }` - Assigned distribution stores
+- Farm Owner: `{ farm_owner: FarmOwnerContext }` - Linked farm owner record
+- Investor: `{ assigned_stores: StoreContext[] }` - Assigned stores for reporting
 
-### LoginCredentials
+**Note**: The app uses cookie-based session management via `frappe-react-sdk`. Session cookies are managed automatically by the SDK.
 
-Input for authentication.
+### StoredCredentials
+
+Credentials stored securely for session restoration across app restarts.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | username | string | Yes | Email or username |
-| password | string | Yes | User password |
+| password | string | Yes | User password (encrypted via expo-secure-store) |
 
-### AuthTokens
+**Storage Keys**:
+- `esf_cred_usr`: Username
+- `esf_cred_pwd`: Password
+- `esf_user_data`: Cached user session data (JSON)
 
-Secure credential storage structure.
+### StoredUserData
+
+Cached user data for immediate display during session restoration.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| user | string | Yes | User email |
+| fullName | string | Yes | Display name |
+| roles | string[] | Yes | Assigned roles |
+| primaryRole | string | Yes | Primary role |
+| context | object | Yes | Role-specific context |
+
+### AuthTokens (Optional)
+
+For direct API calls without `frappe-react-sdk`. Not currently used in the main auth flow.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
@@ -70,9 +87,21 @@ Error response structure.
 | exception | string | No | Full exception message |
 | _server_messages | string | No | JSON-encoded validation messages |
 
-### LoginResponse
+### FrappeLoginResponse
 
-Response from login endpoint.
+Response from Frappe built-in `/api/method/login` endpoint.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| message | string | Yes | "Logged In" on success |
+| home_page | string | Yes | Default home page path |
+| full_name | string | Yes | User's display name |
+
+**Note**: This response does not include roles or context. Those are retrieved via a separate `get_session_info` call.
+
+### SessionInfoResponse
+
+Response from `/api/method/esf.api.auth.get_session_info` endpoint.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
@@ -80,8 +109,6 @@ Response from login endpoint.
 | full_name | string | Yes | Display name |
 | roles | string[] | Yes | All assigned roles |
 | primary_role | string | Yes | Primary role for routing |
-| api_key | string | Yes | API key |
-| api_secret | string | Yes | API secret |
 | context | object | Yes | Role-specific context |
 
 ---

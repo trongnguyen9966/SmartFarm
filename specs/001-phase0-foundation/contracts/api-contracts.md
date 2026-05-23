@@ -7,20 +7,66 @@
 
 This document defines the API contracts between the ESF Mobile App and the Frappe/ERPNext backend. Phase 0 focuses on authentication endpoints and the base patterns for resource access.
 
+The app uses `frappe-react-sdk` for authentication, which implements cookie-based session management via Frappe's built-in login endpoint.
+
 ---
 
 ## Authentication Endpoints
 
-### POST /api/method/esf.api.auth.login
+### Two-Step Authentication Flow
 
-Authenticate user and retrieve session credentials.
+The login process consists of two steps:
+1. **Login**: POST to `/api/method/login` to establish a session cookie
+2. **Get Session Info**: POST to `/api/method/esf.api.auth.get_session_info` to retrieve user roles and context
+
+This two-step approach is required because Frappe's built-in login endpoint doesn't return role/context information.
+
+---
+
+### Step 1: POST /api/method/login (Frappe Built-in)
+
+Authenticate user and establish a session cookie. This endpoint is provided by Frappe core.
 
 **Request**:
 ```json
 {
-  "usr": "string (email)",
+  "usr": "string (email or username)",
   "pwd": "string (password)"
 }
+```
+
+**Response (200 OK)**:
+```json
+{
+  "message": "Logged In",
+  "home_page": "/app",
+  "full_name": "User Name"
+}
+```
+
+**Response Headers**:
+- Sets `sid` session cookie for subsequent requests
+
+**Error Responses**:
+| Status | Condition | Response |
+|--------|-----------|----------|
+| 401 | Invalid credentials | `{"message": "Invalid login credentials"}` |
+| 417 | Validation error | `{"_server_messages": "[...]"}` |
+
+**Note**: This endpoint is called via `useFrappeAuth().login()` from `frappe-react-sdk`.
+
+---
+
+### Step 2: POST /api/method/esf.api.auth.get_session_info
+
+Retrieve the authenticated user's role information and context after login.
+
+**Request**: None (uses session cookie)
+
+**Headers**:
+```
+Cookie: sid={session_id}
+Content-Type: application/json
 ```
 
 **Response (200 OK)**:
@@ -31,8 +77,6 @@ Authenticate user and retrieve session credentials.
     "full_name": "User Name",
     "roles": ["ESF Store Manager", "System Manager"],
     "primary_role": "ESF Store Manager",
-    "api_key": "abcd1234",
-    "api_secret": "xyz789",
     "context": {
       "stores": [
         {
@@ -46,43 +90,9 @@ Authenticate user and retrieve session credentials.
 ```
 
 **Error Responses**:
-| Status | Condition | Response |
-|--------|-----------|----------|
-| 401 | Invalid credentials | `{"message": "Invalid login credentials"}` |
-| 417 | Validation error | `{"_server_messages": "[...]"}` |
-
----
-
-### POST /api/method/esf.api.auth.get_session_info
-
-Refresh current user session information.
-
-**Request**: None (uses Authorization header)
-
-**Headers**:
-```
-Authorization: token {api_key}:{api_secret}
-```
-
-**Response (200 OK)**:
-```json
-{
-  "message": {
-    "user": "email@example.com",
-    "full_name": "User Name",
-    "roles": ["ESF Store Manager"],
-    "primary_role": "ESF Store Manager",
-    "context": {
-      "stores": [...]
-    }
-  }
-}
-```
-
-**Error Responses**:
 | Status | Condition |
 |--------|-----------|
-| 401 | Token expired or invalid |
+| 401 | Session expired or invalid |
 
 ---
 
@@ -263,15 +273,24 @@ Delete document.
 
 ---
 
-## Authorization Header Format
+## Session Authentication
 
-All authenticated requests must include:
+The app uses cookie-based authentication via `frappe-react-sdk`. All authenticated requests include the session cookie automatically.
 
+**Headers for authenticated requests**:
 ```
-Authorization: token {api_key}:{api_secret}
+Cookie: sid={session_id}
 Content-Type: application/json
 Accept: application/json
 ```
+
+**Session Persistence**: To restore sessions across app restarts, the app stores user credentials (username/password) in secure storage and re-authenticates on launch. This is necessary because HTTP-only cookies cannot be persisted by the mobile app.
+
+**Alternative Token Auth** (for direct API calls without frappe-react-sdk):
+```
+Authorization: token {api_key}:{api_secret}
+```
+Note: The current implementation uses cookie-based auth, but token auth is available for future integrations.
 
 ---
 
