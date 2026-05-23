@@ -4,9 +4,10 @@
  */
 
 import { useAuth } from '@/hooks/useAuth';
+import * as TokenStorage from '@/services/auth/tokenStorage';
 import settingApp from '@/settingApp';
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -24,8 +25,22 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [secureText, setSecureText] = useState(true);
+  const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Load saved credentials on mount
+  useEffect(() => {
+    const loadSavedCredentials = async () => {
+      const creds = await TokenStorage.getCredentials();
+      if (creds) {
+        setEmail(creds.username);
+        setPassword(creds.password);
+        setRememberMe(true);
+      }
+    };
+    loadSavedCredentials();
+  }, []);
 
   const handleLogin = async () => {
     // Validate inputs
@@ -42,7 +57,7 @@ export default function LoginScreen() {
     setIsLoading(true);
 
     try {
-      await login(email.trim(), password);
+      await login(email.trim(), password, rememberMe);
       // Navigation is handled by AuthContext
     } catch (err) {
       console.error('[Login] Error:', err);
@@ -133,6 +148,20 @@ export default function LoginScreen() {
               </TouchableOpacity>
             </View>
 
+            {/* Remember me */}
+            <TouchableOpacity
+              style={styles.rememberRow}
+              onPress={() => setRememberMe(!rememberMe)}
+              disabled={isLoading}
+            >
+              <Ionicons
+                name={rememberMe ? 'checkbox' : 'square-outline'}
+                size={22}
+                color={rememberMe ? settingApp.green_primery : '#A0A0A0'}
+              />
+              <Text style={styles.rememberText}>Ghi nhớ đăng nhập</Text>
+            </TouchableOpacity>
+
             {/* Login button */}
             <TouchableOpacity
               style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
@@ -156,40 +185,6 @@ export default function LoginScreen() {
               <Text style={styles.contactText}>Liên hệ nhân viên cửa hàng</Text>
             </TouchableOpacity>
 
-            {/* Dev Mode Credentials */}
-            {__DEV__ && (
-              <View style={styles.devModeContainer}>
-                <Text style={styles.devModeTitle}>Test Accounts (Dev Mode)</Text>
-                <TouchableOpacity
-                  style={styles.devAccount}
-                  onPress={() => {
-                    setEmail('store@test.com');
-                    setPassword('123456');
-                  }}
-                >
-                  <Text style={styles.devAccountText}>Store Employee: store@test.com</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.devAccount}
-                  onPress={() => {
-                    setEmail('farm@test.com');
-                    setPassword('123456');
-                  }}
-                >
-                  <Text style={styles.devAccountText}>Farm Owner: farm@test.com</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.devAccount}
-                  onPress={() => {
-                    setEmail('investor@test.com');
-                    setPassword('123456');
-                  }}
-                >
-                  <Text style={styles.devAccountText}>Investor: investor@test.com</Text>
-                </TouchableOpacity>
-                <Text style={styles.devAccountHint}>Password: 123456</Text>
-              </View>
-            )}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -276,6 +271,16 @@ const styles = StyleSheet.create({
   },
   eyeIcon: {
     paddingHorizontal: 14,
+  },
+  rememberRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    marginTop: 16,
+    gap: 8,
+  },
+  rememberText: {
+    fontSize: 14,
+    color: '#333333',
   },
   loginButton: {
     backgroundColor: settingApp.green_primery,

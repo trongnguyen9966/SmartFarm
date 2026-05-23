@@ -9,7 +9,7 @@ import settingApp from '@/settingApp';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function InvestorDashboard() {
-  const { user } = useAuth();
+  const { userInfo } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = useCallback(async () => {
@@ -31,7 +31,7 @@ export default function InvestorDashboard() {
       <View style={styles.header}>
         <View>
           <Text style={styles.greeting}>Xin chào,</Text>
-          <Text style={styles.userName}>{user?.fullName || 'Nhà đầu tư'}</Text>
+          <Text style={styles.userName}>{userInfo?.full_name || 'Nhà đầu tư'}</Text>
         </View>
       </View>
 

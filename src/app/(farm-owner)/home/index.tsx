@@ -9,7 +9,7 @@ import settingApp from '@/settingApp';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function FarmOwnerDashboard() {
-  const { user } = useAuth();
+  const { userInfo } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = useCallback(async () => {
@@ -24,7 +24,7 @@ export default function FarmOwnerDashboard() {
       <View style={styles.header}>
         <View>
           <Text style={styles.greeting}>Xin chào,</Text>
-          <Text style={styles.userName}>{user?.fullName || 'Chủ nông trại'}</Text>
+          <Text style={styles.userName}>{userInfo?.full_name || 'Chủ nông trại'}</Text>
         </View>
       </View>
 

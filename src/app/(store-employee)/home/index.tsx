@@ -22,7 +22,7 @@ import { Card, Badge } from '@/components/ui';
 export default function StoreEmployeeDashboard() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { user } = useAuth();
+  const { userInfo } = useAuth();
   const { data, isLoading, error, refresh } = useStoreDashboard();
 
   const formatDate = (dateStr: string) => {
@@ -49,7 +49,7 @@ export default function StoreEmployeeDashboard() {
       <View style={styles.header}>
         <View>
           <Text style={styles.greeting}>Xin chào,</Text>
-          <Text style={styles.userName}>{user?.fullName || 'Nhân viên'}</Text>
+          <Text style={styles.userName}>{userInfo?.full_name || 'Nhân viên'}</Text>
         </View>
         <TouchableOpacity style={styles.notificationBtn}>
           <Ionicons name="notifications-outline" size={24} color="#FFFFFF" />

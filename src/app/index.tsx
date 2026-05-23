@@ -9,7 +9,7 @@ SplashScreen.preventAutoHideAsync();
 
 export default function SplashPage() {
   const router = useRouter();
-  const { isLoading, isAuthenticated, user } = useAuth();
+  const { isLoading, isAuthenticated } = useAuth();
   const scale = useRef(new Animated.Value(0.3)).current;
   const opacity = useRef(new Animated.Value(0)).current;
   const hasNavigated = useRef(false);
@@ -47,15 +47,15 @@ export default function SplashPage() {
 
       hasNavigated.current = true;
 
-      if (isAuthenticated && user) {
-        router.replace('/(tabs)' as any);
+      if (isAuthenticated) {
+        router.replace('/(store-employee)/home' as any);
       } else {
         router.replace('/auth/login');
       }
     };
 
     navigate();
-  }, [isLoading, isAuthenticated, user, router]);
+  }, [isLoading, isAuthenticated, router]);
 
   return (
     <View style={styles.container}>

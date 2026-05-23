@@ -9,7 +9,7 @@ import settingApp from '@/settingApp';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function ProfileScreen() {
-  const { user, logout, isLoading } = useAuth();
+  const { currentUser, userInfo, logout, isLoading } = useAuth();
 
   const handleLogout = () => {
     Alert.alert(
@@ -39,8 +39,8 @@ export default function ProfileScreen() {
             <Ionicons name="person" size={40} color="#FFFFFF" />
           </View>
           <View style={styles.userInfo}>
-            <Text style={styles.userName}>{user?.fullName || 'Người dùng'}</Text>
-            <Text style={styles.userEmail}>{user?.email || ''}</Text>
+            <Text style={styles.userName}>{userInfo?.full_name || currentUser || 'Người dùng'}</Text>
+            <Text style={styles.userEmail}>{currentUser || ''}</Text>
             <View style={styles.roleBadge}>
               <Text style={styles.roleText}>Chủ nông trại</Text>
             </View>
