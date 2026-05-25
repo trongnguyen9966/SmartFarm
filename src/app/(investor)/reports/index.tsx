@@ -3,13 +3,15 @@
  */
 
 import { StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import settingApp from '@/settingApp';
 
 export default function ReportsScreen() {
+  const insets = useSafeAreaInsets();
+
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
+    <View style={styles.container}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <Text style={styles.title}>Báo cáo</Text>
       </View>
       <View style={styles.content}>
@@ -18,7 +20,7 @@ export default function ReportsScreen() {
           <Text style={styles.emptySubtext}>Tính năng đang phát triển</Text>
         </View>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 

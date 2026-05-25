@@ -43,10 +43,8 @@ export default function StoreEmployeeDashboard() {
 
   return (
     <View style={styles.container}>
-      {/* Status bar background */}
-      <View style={[styles.statusBarBg, { height: insets.top }]} />
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <View>
           <Text style={styles.greeting}>Xin chào,</Text>
           <Text style={styles.userName}>{userInfo?.full_name || 'Nhân viên'}</Text>
@@ -224,9 +222,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F5F5F5',
-  },
-  statusBarBg: {
-    backgroundColor: settingApp.green_primery,
   },
   header: {
     backgroundColor: settingApp.green_primery,

@@ -3,7 +3,7 @@
  */
 
 import { StyleSheet, Text, View, ScrollView, RefreshControl } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useCallback } from 'react';
 import settingApp from '@/settingApp';
 import { useAuth } from '@/hooks/useAuth';
@@ -25,10 +25,12 @@ export default function InvestorDashboard() {
     }).format(value);
   };
 
+  const insets = useSafeAreaInsets();
+
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <View>
           <Text style={styles.greeting}>Xin chào,</Text>
           <Text style={styles.userName}>{userInfo?.full_name || 'Nhà đầu tư'}</Text>
@@ -91,7 +93,7 @@ export default function InvestorDashboard() {
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

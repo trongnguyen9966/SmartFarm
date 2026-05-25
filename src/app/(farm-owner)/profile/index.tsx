@@ -3,13 +3,14 @@
  */
 
 import { StyleSheet, Text, View, TouchableOpacity, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import settingApp from '@/settingApp';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function ProfileScreen() {
   const { currentUser, userInfo, logout, isLoading } = useAuth();
+  const insets = useSafeAreaInsets();
 
   const handleLogout = () => {
     Alert.alert(
@@ -27,8 +28,8 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
+    <View style={styles.container}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <Text style={styles.title}>Tài khoản</Text>
       </View>
 
@@ -84,7 +85,7 @@ export default function ProfileScreen() {
           <Text style={styles.logoutText}>Đăng xuất</Text>
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 

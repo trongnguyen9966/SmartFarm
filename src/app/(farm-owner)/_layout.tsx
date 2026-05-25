@@ -6,8 +6,11 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import settingApp from '@/settingApp';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function FarmOwnerLayout() {
+  const insets = useSafeAreaInsets();
+
   return (
     <Tabs
       screenOptions={{
@@ -17,9 +20,9 @@ export default function FarmOwnerLayout() {
         tabBarStyle: {
           backgroundColor: '#FFFFFF',
           borderTopColor: '#E5E7EB',
-          paddingBottom: 5,
+          paddingBottom: insets.bottom,
           paddingTop: 5,
-          height: 60,
+          height: 50 + insets.bottom,
         },
         tabBarLabelStyle: {
           fontSize: 12,

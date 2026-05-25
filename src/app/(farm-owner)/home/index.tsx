@@ -2,11 +2,11 @@
  * Farm Owner Dashboard
  */
 
-import { StyleSheet, Text, View, ScrollView, RefreshControl } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState, useCallback } from 'react';
-import settingApp from '@/settingApp';
 import { useAuth } from '@/hooks/useAuth';
+import settingApp from '@/settingApp';
+import { useCallback, useState } from 'react';
+import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function FarmOwnerDashboard() {
   const { userInfo } = useAuth();
@@ -18,10 +18,12 @@ export default function FarmOwnerDashboard() {
     setTimeout(() => setRefreshing(false), 1000);
   }, []);
 
+  const insets = useSafeAreaInsets();
+
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <View>
           <Text style={styles.greeting}>Xin chào,</Text>
           <Text style={styles.userName}>{userInfo?.full_name || 'Chủ nông trại'}</Text>
@@ -75,7 +77,7 @@ export default function FarmOwnerDashboard() {
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

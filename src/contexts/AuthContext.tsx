@@ -44,7 +44,8 @@ function getRouteForRole(roles: Array<{ role: string }>): string {
   const roleNames = roles.map((r) => r.role);
   if (roleNames.includes('ESF Farm Owner')) return '/(farm-owner)/home';
   if (roleNames.includes('ESF Investor')) return '/(investor)/home';
-  return '/(store-employee)/home';
+  // return '/(store-employee)/home';
+  return '/(farm-owner)/home';
 }
 
 // ============================================
