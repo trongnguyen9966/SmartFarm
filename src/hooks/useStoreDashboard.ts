@@ -1,14 +1,10 @@
 /**
  * Hook for Store Employee Dashboard data
+ * Uses frappe-react-sdk's useFrappeGetCall
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useFrappeGetCall } from 'frappe-react-sdk';
 import type { StoreDashboardResponse } from '@/types/api';
-import * as storeApi from '@/services/api/store';
-import { mockDashboard } from '@/services/mock/storeData';
-
-// Set to false to use real API instead of mock data
-const MOCK_ENABLED = false;
 
 interface UseStoreDashboardResult {
   data: StoreDashboardResponse | null;
@@ -18,44 +14,18 @@ interface UseStoreDashboardResult {
 }
 
 export function useStoreDashboard(): UseStoreDashboardResult {
-  const [data, setData] = useState<StoreDashboardResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const { data, error, isLoading, mutate } = useFrappeGetCall<{ message: StoreDashboardResponse }>(
+    'esf.api.store.get_dashboard',
+  );
 
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      if (MOCK_ENABLED) {
-        // Simulate network delay
-        await new Promise((resolve) => setTimeout(resolve, 800));
-        setData(mockDashboard);
-      } else {
-        const response = await storeApi.getDashboard();
-        setData(response);
-      }
-    } catch (err) {
-      console.error('[useStoreDashboard] Error:', err);
-      setError(err instanceof Error ? err : new Error('Failed to fetch dashboard'));
-
-      // Fallback to mock data in dev mode
-      if (MOCK_ENABLED) {
-        setData(mockDashboard);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const refresh = async () => {
+    await mutate();
+  };
 
   return {
-    data,
+    data: data?.message ?? null,
     isLoading,
-    error,
-    refresh: fetchData,
+    error: error ? new Error(error.message ?? 'Failed to fetch dashboard') : null,
+    refresh,
   };
 }

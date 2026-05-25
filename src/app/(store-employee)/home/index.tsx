@@ -2,29 +2,29 @@
  * Store Employee Dashboard
  */
 
-import {
-  StyleSheet,
-  Text,
-  View,
-  ScrollView,
-  RefreshControl,
-  TouchableOpacity,
-  ActivityIndicator,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import settingApp from '@/settingApp';
+import { Badge, Card } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
 import { useStoreDashboard } from '@/hooks/useStoreDashboard';
-import { Card, Badge } from '@/components/ui';
+import settingApp from '@/settingApp';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import {
+  ActivityIndicator,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function StoreEmployeeDashboard() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { userInfo } = useAuth();
   const { data, isLoading, error, refresh } = useStoreDashboard();
-
+  console.log('StoreEmployeeDashboard data:', data, 'error:', error);
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });

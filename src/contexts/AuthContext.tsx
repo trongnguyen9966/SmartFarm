@@ -181,12 +181,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       await frappeLogout();
       document.cookie = 'user_id=; max-age=0';
-      await TokenStorage.clearAll();
+      // Only clear session data, keep saved credentials for "remember me"
+      await TokenStorage.clearTokens();
+      await TokenStorage.clearUserData();
       router.replace('/auth/login');
     } catch (err) {
       console.error('[Auth] Logout error:', err);
       document.cookie = 'user_id=; max-age=0';
-      await TokenStorage.clearAll();
+      await TokenStorage.clearTokens();
+      await TokenStorage.clearUserData();
       router.replace('/auth/login');
     }
   }, [router, frappeLogout]);
