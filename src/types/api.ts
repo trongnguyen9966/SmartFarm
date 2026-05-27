@@ -73,11 +73,21 @@ export interface LoginResponse {
   context: UserContext;
 }
 
+export interface DocPermission {
+  read: boolean;
+  write: boolean;
+  create: boolean;
+  delete: boolean;
+}
+
+export type DocPermissions = Record<string, DocPermission>;
+
 export interface SessionInfoResponse {
   user: string;
   full_name: string;
   roles: string[];
   primary_role: UserRole;
+  permissions: DocPermissions;
   context: UserContext;
 }
 

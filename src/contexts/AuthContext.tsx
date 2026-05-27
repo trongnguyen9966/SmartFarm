@@ -3,10 +3,12 @@
  * Provides auth state and actions throughout the app using frappe-react-sdk hooks
  */
 
+import { USER_ROLES } from '@/constants/api';
 import * as TokenStorage from '@/services/auth/tokenStorage';
+import type { SessionInfoResponse } from '@/types/api';
 import { useRouter, useSegments } from 'expo-router';
-import { useFrappeAuth, useFrappeGetDoc } from 'frappe-react-sdk';
-import React, { createContext, useCallback, useEffect, useRef } from 'react';
+import { useFrappeAuth, useFrappeGetDoc, useFrappePostCall } from 'frappe-react-sdk';
+import React, { createContext, useCallback, useEffect, useRef, useState } from 'react';
 
 // ============================================
 // Types
@@ -23,6 +25,7 @@ interface UserInfo {
 interface AuthContextType {
   currentUser: string | null;
   userInfo: UserInfo | null;
+  sessionInfo: SessionInfoResponse | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (username: string, password: string, rememberMe?: boolean) => Promise<void>;
@@ -40,12 +43,17 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 // Helper: Get route for role
 // ============================================
 
-function getRouteForRole(roles: Array<{ role: string }>): string {
-  const roleNames = roles.map((r) => r.role);
-  if (roleNames.includes('ESF Farm Owner')) return '/(farm-owner)/home';
-  if (roleNames.includes('ESF Investor')) return '/(investor)/home';
-  // return '/(store-employee)/home';
-  return '/(farm-owner)/home';
+function getRouteForRole(primaryRole: string | undefined): string {
+  switch (primaryRole) {
+    case USER_ROLES.FARM_OWNER:
+      return '/(farm-owner)/home';
+    case USER_ROLES.INVESTOR:
+      return '/(investor)/home';
+    case USER_ROLES.STORE_EMPLOYEE:
+      return '/(store-employee)/home';
+    default:
+      return '/(store-employee)/home';
+  }
 }
 
 // ============================================
@@ -60,6 +68,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const router = useRouter();
   const segments = useSegments();
   const hasRestoredSession = useRef(false);
+  const [sessionInfo, setSessionInfo] = useState<SessionInfoResponse | null>(null);
 
   // frappe-react-sdk: auth state (single source of truth)
   const {
@@ -77,6 +86,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const { data: userInfo } = useFrappeGetDoc<UserInfo>(
     'User',
     currentUser ?? undefined,
+  );
+
+  // frappe-react-sdk: call API to get User document
+  const { call: getUser } = useFrappePostCall<{ message: UserInfo }>(
+    'frappe.client.get'
+  );
+
+  // frappe-react-sdk: call API to get user session info
+  const { call: getSessionInfo } = useFrappePostCall<{ message: any }>(
+    'esf.api.auth.get_session_info'
   );
 
   const isLoading = frappeIsLoading || isValidating;
@@ -142,11 +161,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.log('[Auth] Redirecting to login (not authenticated)');
       router.replace('/auth/login');
     } else if (isAuthenticated && (inAuthGroup || inSplash)) {
-      const route = getRouteForRole(userInfo?.roles ?? []);
+      const route = getRouteForRole(sessionInfo?.primary_role);
       console.log('[Auth] Redirecting to dashboard:', route);
       router.replace(route as never);
     }
-  }, [isAuthenticated, segments, isLoading, router, userInfo]);
+  }, [isAuthenticated, segments, isLoading, router, sessionInfo]);
 
   /**
    * Login with username and password
@@ -155,13 +174,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
     console.log('[Auth] Login attempt:', username);
     try {
       const result = await frappeLogin({ username, password });
-      console.log('[Auth] Login OK:', JSON.stringify(result));
+      console.log('[Auth] Login OK:', result);
 
       // Set user_id cookie manually for React Native polyfill
       // (HTTP Set-Cookie headers don't populate document.cookie in RN)
       document.cookie = `user_id=${username}`;
       getUserCookie();
       updateCurrentUser();
+
+      // Fetch User document with roles
+      const userResult = await getUser({
+        doctype: 'User',
+        name: username,
+      });
+      console.log('[Auth] User data:', userResult);
+
+      // Fetch user session info and store it
+      const sessionResult = await getSessionInfo({});
+      console.log('[Auth] Session info:', sessionResult);
+      if (sessionResult) {
+        setSessionInfo(sessionResult as unknown as SessionInfoResponse);
+      }
 
       if (rememberMe) {
         await TokenStorage.saveCredentials(username, password);
@@ -172,7 +205,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.error('[Auth] Login error:', err);
       throw err;
     }
-  }, [frappeLogin, getUserCookie, updateCurrentUser]);
+  }, [frappeLogin, getUserCookie, updateCurrentUser, getUser, getSessionInfo]);
 
   /**
    * Logout and clear session
@@ -182,13 +215,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       await frappeLogout();
       document.cookie = 'user_id=; max-age=0';
-      // Only clear session data, keep saved credentials for "remember me"
+      setSessionInfo(null);
       await TokenStorage.clearTokens();
       await TokenStorage.clearUserData();
       router.replace('/auth/login');
     } catch (err) {
       console.error('[Auth] Logout error:', err);
       document.cookie = 'user_id=; max-age=0';
+      setSessionInfo(null);
       await TokenStorage.clearTokens();
       await TokenStorage.clearUserData();
       router.replace('/auth/login');
@@ -198,6 +232,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const value: AuthContextType = {
     currentUser: currentUser ?? null,
     userInfo: userInfo ?? null,
+    sessionInfo,
     isLoading,
     isAuthenticated,
     login,
