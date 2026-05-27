@@ -14,12 +14,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import settingApp from '@/settingApp';
 import { Card, Badge } from '@/components/ui';
 import * as storeApi from '@/services/api/store';
 import type { SalesOrder, DeliveryNote } from '@/types/models';
 
 export default function OrderDetailScreen() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [order, setOrder] = useState<SalesOrder | null>(null);
@@ -86,17 +88,17 @@ export default function OrderDetailScreen() {
   const getStatusText = (status: string): string => {
     switch (status) {
       case 'Completed':
-        return 'Hoàn thành';
+        return t('orders.statusCompleted');
       case 'To Deliver and Bill':
-        return 'Chờ giao & thanh toán';
+        return t('orders.statusPendingDeliveryPayment');
       case 'To Deliver':
-        return 'Chờ giao hàng';
+        return t('orders.statusPendingDelivery');
       case 'To Bill':
-        return 'Chờ thanh toán';
+        return t('orders.statusPendingPayment');
       case 'Cancelled':
-        return 'Đã hủy';
+        return t('orders.statusCancelled');
       case 'Draft':
-        return 'Nháp';
+        return t('orders.statusDraft');
       default:
         return status;
     }
@@ -119,11 +121,11 @@ export default function OrderDetailScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Chi tiết đơn hàng</Text>
+          <Text style={styles.headerTitle}>{t('orders.orderDetail')}</Text>
           <View style={{ width: 40 }} />
         </View>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Không tìm thấy đơn hàng</Text>
+          <Text style={styles.errorText}>{t('orders.notFound')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -165,7 +167,7 @@ export default function OrderDetailScreen() {
             <View style={styles.customerRow}>
               <Ionicons name="person" size={18} color="#666" />
               <View style={styles.customerInfo}>
-                <Text style={styles.customerLabel}>Khách hàng</Text>
+                <Text style={styles.customerLabel}>{t('orders.customer')}</Text>
                 <Text style={styles.customerName}>{order.customer_name}</Text>
                 <Text style={styles.customerId}>{order.customer}</Text>
               </View>
@@ -175,11 +177,11 @@ export default function OrderDetailScreen() {
           {/* Order Summary */}
           <View style={styles.summarySection}>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Tổng tiền hàng</Text>
+              <Text style={styles.summaryLabel}>{t('orders.subtotal')}</Text>
               <Text style={styles.summaryValue}>{formatCurrency(order.total)}</Text>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Tổng cộng</Text>
+              <Text style={styles.summaryLabel}>{t('orders.total')}</Text>
               <Text style={styles.grandTotal}>{formatCurrency(order.grand_total)}</Text>
             </View>
           </View>
@@ -188,7 +190,7 @@ export default function OrderDetailScreen() {
         {/* Items Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Sản phẩm</Text>
+            <Text style={styles.sectionTitle}>{t('orders.products')}</Text>
             <Badge label={`${order.items.length}`} variant="info" />
           </View>
 
@@ -206,19 +208,19 @@ export default function OrderDetailScreen() {
 
               <View style={styles.itemDetails}>
                 <View style={styles.itemDetail}>
-                  <Text style={styles.itemDetailLabel}>Số lượng</Text>
+                  <Text style={styles.itemDetailLabel}>{t('orders.quantity')}</Text>
                   <Text style={styles.itemDetailValue}>
                     {item.qty} {item.uom}
                   </Text>
                 </View>
                 <View style={styles.itemDetail}>
-                  <Text style={styles.itemDetailLabel}>Đơn giá</Text>
+                  <Text style={styles.itemDetailLabel}>{t('orders.unitPrice')}</Text>
                   <Text style={styles.itemDetailValue}>
                     {formatCurrency(item.rate)}
                   </Text>
                 </View>
                 <View style={styles.itemDetail}>
-                  <Text style={styles.itemDetailLabel}>Thành tiền</Text>
+                  <Text style={styles.itemDetailLabel}>{t('orders.lineTotal')}</Text>
                   <Text style={styles.itemAmount}>
                     {formatCurrency(item.amount)}
                   </Text>
@@ -232,7 +234,7 @@ export default function OrderDetailScreen() {
         {deliveryNotes.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Phiếu giao hàng</Text>
+              <Text style={styles.sectionTitle}>{t('orders.deliveryNotes')}</Text>
               <Badge label={`${deliveryNotes.length}`} variant="info" />
             </View>
 
@@ -260,23 +262,23 @@ export default function OrderDetailScreen() {
 
         {/* Metadata Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Thông tin khác</Text>
+          <Text style={styles.sectionTitle}>{t('metadata.otherInfo')}</Text>
           <Card style={styles.metadataCard}>
             <View style={styles.metadataRow}>
               <Ionicons name="storefront-outline" size={16} color="#9CA3AF" />
-              <Text style={styles.metadataLabel}>Cửa hàng:</Text>
+              <Text style={styles.metadataLabel}>{t('metadata.store')}</Text>
               <Text style={styles.metadataValue}>
                 {order.custom_distribution_store || 'N/A'}
               </Text>
             </View>
             <View style={styles.metadataRow}>
               <Ionicons name="person-outline" size={16} color="#9CA3AF" />
-              <Text style={styles.metadataLabel}>Người tạo:</Text>
+              <Text style={styles.metadataLabel}>{t('metadata.createdBy')}</Text>
               <Text style={styles.metadataValue}>{order.owner}</Text>
             </View>
             <View style={styles.metadataRow}>
               <Ionicons name="time-outline" size={16} color="#9CA3AF" />
-              <Text style={styles.metadataLabel}>Ngày tạo:</Text>
+              <Text style={styles.metadataLabel}>{t('metadata.createdDate')}</Text>
               <Text style={styles.metadataValue}>{order.creation}</Text>
             </View>
           </Card>

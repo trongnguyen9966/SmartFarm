@@ -3,21 +3,23 @@
  */
 
 import { StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import settingApp from '@/settingApp';
 
 export default function GardensScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <Text style={styles.title}>Vườn của tôi</Text>
+        <Text style={styles.title}>{t('gardens.title')}</Text>
       </View>
       <View style={styles.content}>
         <View style={styles.emptyState}>
-          <Text style={styles.emptyText}>Danh sách vườn</Text>
-          <Text style={styles.emptySubtext}>Tính năng đang phát triển</Text>
+          <Text style={styles.emptyText}>{t('gardens.list')}</Text>
+          <Text style={styles.emptySubtext}>{t('common.featureInProgress')}</Text>
         </View>
       </View>
     </View>

@@ -5,10 +5,12 @@
 import { useAuth } from '@/hooks/useAuth';
 import settingApp from '@/settingApp';
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function FarmOwnerDashboard() {
+  const { t } = useTranslation();
   const { userInfo } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -25,8 +27,8 @@ export default function FarmOwnerDashboard() {
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <View>
-          <Text style={styles.greeting}>Xin chào,</Text>
-          <Text style={styles.userName}>{userInfo?.full_name || 'Chủ nông trại'}</Text>
+          <Text style={styles.greeting}>{t('dashboard.greeting')}</Text>
+          <Text style={styles.userName}>{userInfo?.full_name || t('farmOwnerHome.defaultUser')}</Text>
         </View>
       </View>
 
@@ -45,35 +47,35 @@ export default function FarmOwnerDashboard() {
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>0</Text>
-            <Text style={styles.statLabel}>Nông trại</Text>
+            <Text style={styles.statLabel}>{t('dashboard.farms')}</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>0</Text>
-            <Text style={styles.statLabel}>Vườn</Text>
+            <Text style={styles.statLabel}>{t('dashboard.gardens')}</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>0</Text>
-            <Text style={styles.statLabel}>Đang canh tác</Text>
+            <Text style={styles.statLabel}>{t('dashboard.activeCultivations')}</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>0</Text>
-            <Text style={styles.statLabel}>Nhật ký</Text>
+            <Text style={styles.statLabel}>{t('dashboard.careLogs')}</Text>
           </View>
         </View>
 
         {/* Recent Care Logs */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Nhật ký chăm sóc gần đây</Text>
+          <Text style={styles.sectionTitle}>{t('dashboard.recentCareLogs')}</Text>
           <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>Chưa có dữ liệu</Text>
+            <Text style={styles.emptyText}>{t('common.noData')}</Text>
           </View>
         </View>
 
         {/* My Farms */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Nông trại của tôi</Text>
+          <Text style={styles.sectionTitle}>{t('dashboard.myFarms')}</Text>
           <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>Chưa có dữ liệu</Text>
+            <Text style={styles.emptyText}>{t('common.noData')}</Text>
           </View>
         </View>
       </ScrollView>

@@ -4,6 +4,7 @@
  */
 
 import '@/config/polyfills';
+import '@/i18n';
 
 if (__DEV__) {
   require('@/config/reactotron');

@@ -5,6 +5,7 @@
 
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import settingApp from '@/settingApp';
 
 interface ErrorScreenProps {
@@ -15,20 +16,25 @@ interface ErrorScreenProps {
 }
 
 export function ErrorScreen({
-  title = 'Đã xảy ra lỗi',
-  message = 'Không thể tải dữ liệu. Vui lòng thử lại.',
+  title,
+  message,
   onRetry,
-  retryLabel = 'Thử lại',
+  retryLabel,
 }: ErrorScreenProps) {
+  const { t } = useTranslation();
+  const displayTitle = title ?? t('common.errorOccurred');
+  const displayMessage = message ?? t('common.errorLoadData');
+  const displayRetryLabel = retryLabel ?? t('common.retry');
+
   return (
     <View style={styles.container}>
       <Ionicons name="alert-circle-outline" size={64} color="#EF4444" />
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.message}>{message}</Text>
+      <Text style={styles.title}>{displayTitle}</Text>
+      <Text style={styles.message}>{displayMessage}</Text>
       {onRetry && (
         <TouchableOpacity style={styles.retryButton} onPress={onRetry}>
           <Ionicons name="refresh" size={18} color="#FFFFFF" />
-          <Text style={styles.retryText}>{retryLabel}</Text>
+          <Text style={styles.retryText}>{displayRetryLabel}</Text>
         </TouchableOpacity>
       )}
     </View>

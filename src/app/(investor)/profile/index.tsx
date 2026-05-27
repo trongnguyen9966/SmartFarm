@@ -2,24 +2,28 @@
  * Investor - Profile Screen
  */
 
+import { useAuth } from '@/hooks/useAuth';
+import settingApp from '@/settingApp';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View, TouchableOpacity, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import settingApp from '@/settingApp';
-import { useAuth } from '@/hooks/useAuth';
 
 export default function ProfileScreen() {
   const { currentUser, userInfo, logout, isLoading } = useAuth();
+  const router = useRouter();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
   const handleLogout = () => {
     Alert.alert(
-      'Đăng xuất',
-      'Bạn có chắc chắn muốn đăng xuất?',
+      t('profile.logout'),
+      t('profile.logoutConfirm'),
       [
-        { text: 'Hủy', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Đăng xuất',
+          text: t('profile.logout'),
           style: 'destructive',
           onPress: logout,
         },
@@ -30,7 +34,7 @@ export default function ProfileScreen() {
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <Text style={styles.title}>Tài khoản</Text>
+        <Text style={styles.title}>{t('profile.account')}</Text>
       </View>
 
       <View style={styles.content}>
@@ -40,10 +44,10 @@ export default function ProfileScreen() {
             <Ionicons name="person" size={40} color="#FFFFFF" />
           </View>
           <View style={styles.userInfo}>
-            <Text style={styles.userName}>{userInfo?.full_name || currentUser || 'Người dùng'}</Text>
+            <Text style={styles.userName}>{userInfo?.full_name || currentUser || t('profile.defaultUser')}</Text>
             <Text style={styles.userEmail}>{currentUser || ''}</Text>
             <View style={styles.roleBadge}>
-              <Text style={styles.roleText}>Nhà đầu tư</Text>
+              <Text style={styles.roleText}>{t('profile.roleInvestor')}</Text>
             </View>
           </View>
         </View>
@@ -52,25 +56,25 @@ export default function ProfileScreen() {
         <View style={styles.menuSection}>
           <TouchableOpacity style={styles.menuItem}>
             <Ionicons name="person-outline" size={22} color="#333" />
-            <Text style={styles.menuText}>Thông tin cá nhân</Text>
+            <Text style={styles.menuText}>{t('profile.personalInfo')}</Text>
             <Ionicons name="chevron-forward" size={20} color="#999" />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem}>
             <Ionicons name="storefront-outline" size={22} color="#333" />
-            <Text style={styles.menuText}>Cửa hàng được giao</Text>
+            <Text style={styles.menuText}>{t('profile.assignedStores')}</Text>
             <Ionicons name="chevron-forward" size={20} color="#999" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/(investor)/profile/settings')}>
             <Ionicons name="settings-outline" size={22} color="#333" />
-            <Text style={styles.menuText}>Cài đặt</Text>
+            <Text style={styles.menuText}>{t('profile.settings')}</Text>
             <Ionicons name="chevron-forward" size={20} color="#999" />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem}>
             <Ionicons name="help-circle-outline" size={22} color="#333" />
-            <Text style={styles.menuText}>Trợ giúp</Text>
+            <Text style={styles.menuText}>{t('profile.help')}</Text>
             <Ionicons name="chevron-forward" size={20} color="#999" />
           </TouchableOpacity>
         </View>
@@ -82,7 +86,7 @@ export default function ProfileScreen() {
           disabled={isLoading}
         >
           <Ionicons name="log-out-outline" size={22} color="#EF4444" />
-          <Text style={styles.logoutText}>Đăng xuất</Text>
+          <Text style={styles.logoutText}>{t('profile.logout')}</Text>
         </TouchableOpacity>
       </View>
     </View>

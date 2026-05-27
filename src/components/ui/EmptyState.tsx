@@ -5,6 +5,7 @@
 
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import settingApp from '@/settingApp';
 
 type IoniconsName = keyof typeof Ionicons.glyphMap;
@@ -19,17 +20,20 @@ interface EmptyStateProps {
 
 export function EmptyState({
   icon = 'document-outline',
-  title = 'Không có dữ liệu',
+  title,
   message,
   actionLabel,
   onAction,
 }: EmptyStateProps) {
+  const { t } = useTranslation();
+  const displayTitle = title ?? t('common.noData');
+
   return (
     <View style={styles.container}>
       <View style={styles.iconContainer}>
         <Ionicons name={icon} size={48} color="#9CA3AF" />
       </View>
-      <Text style={styles.title}>{title}</Text>
+      <Text style={styles.title}>{displayTitle}</Text>
       {message && <Text style={styles.message}>{message}</Text>}
       {actionLabel && onAction && (
         <TouchableOpacity style={styles.actionButton} onPress={onAction}>

@@ -10,3 +10,4 @@ export { Badge } from './Badge';
 export { ListItem } from './ListItem';
 export { SearchBar } from './SearchBar';
 export { ScreenContainer, FullScreenContainer } from './ScreenContainer';
+export { LanguageSelector } from './LanguageSelector';

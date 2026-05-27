@@ -5,10 +5,12 @@
 import { StyleSheet, Text, View, ScrollView, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import settingApp from '@/settingApp';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function InvestorDashboard() {
+  const { t } = useTranslation();
   const { userInfo } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -32,8 +34,8 @@ export default function InvestorDashboard() {
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <View>
-          <Text style={styles.greeting}>Xin chào,</Text>
-          <Text style={styles.userName}>{userInfo?.full_name || 'Nhà đầu tư'}</Text>
+          <Text style={styles.greeting}>{t('dashboard.greeting')}</Text>
+          <Text style={styles.userName}>{userInfo?.full_name || t('investorHome.defaultUser')}</Text>
         </View>
       </View>
 
@@ -50,10 +52,10 @@ export default function InvestorDashboard() {
       >
         {/* Revenue Card */}
         <View style={styles.revenueCard}>
-          <Text style={styles.revenueLabel}>Tổng doanh thu tháng này</Text>
+          <Text style={styles.revenueLabel}>{t('dashboard.totalRevenueThisMonth')}</Text>
           <Text style={styles.revenueAmount}>{formatCurrency(0)}</Text>
           <View style={styles.revenueMeta}>
-            <Text style={styles.revenueChange}>+0% so với tháng trước</Text>
+            <Text style={styles.revenueChange}>{t('dashboard.comparedLastMonth')}</Text>
           </View>
         </View>
 
@@ -61,35 +63,35 @@ export default function InvestorDashboard() {
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>0</Text>
-            <Text style={styles.statLabel}>Cửa hàng</Text>
+            <Text style={styles.statLabel}>{t('dashboard.stores')}</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>0</Text>
-            <Text style={styles.statLabel}>Đơn hàng</Text>
+            <Text style={styles.statLabel}>{t('dashboard.orders')}</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>0</Text>
-            <Text style={styles.statLabel}>Nông trại</Text>
+            <Text style={styles.statLabel}>{t('dashboard.farms')}</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>0</Text>
-            <Text style={styles.statLabel}>Vườn</Text>
+            <Text style={styles.statLabel}>{t('dashboard.gardens')}</Text>
           </View>
         </View>
 
         {/* Revenue Trend */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Xu hướng doanh thu</Text>
+          <Text style={styles.sectionTitle}>{t('dashboard.revenueTrend')}</Text>
           <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>Biểu đồ đang phát triển</Text>
+            <Text style={styles.emptyText}>{t('dashboard.chartInProgress')}</Text>
           </View>
         </View>
 
         {/* Stores Breakdown */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Doanh thu theo cửa hàng</Text>
+          <Text style={styles.sectionTitle}>{t('dashboard.revenueByStore')}</Text>
           <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>Chưa có dữ liệu</Text>
+            <Text style={styles.emptyText}>{t('common.noData')}</Text>
           </View>
         </View>
       </ScrollView>

@@ -3,11 +3,13 @@
  * Handles user authentication
  */
 
+import { LanguageSelector } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
 import * as TokenStorage from '@/services/auth/tokenStorage';
 import settingApp from '@/settingApp';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -22,6 +24,7 @@ import {
 
 export default function LoginScreen() {
   const { login } = useAuth();
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [secureText, setSecureText] = useState(true);
@@ -45,11 +48,11 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     // Validate inputs
     if (!email.trim()) {
-      setError('Vui lòng nhập tên đăng nhập hoặc email');
+      setError(t('login.errorEmptyEmail'));
       return;
     }
     if (!password.trim()) {
-      setError('Vui lòng nhập mật khẩu');
+      setError(t('login.errorEmptyPassword'));
       return;
     }
 
@@ -61,13 +64,13 @@ export default function LoginScreen() {
       // Navigation is handled by AuthContext
     } catch (err) {
       console.error('[Login] Error:', err);
-      const message = err instanceof Error ? err.message : 'Đăng nhập thất bại';
+      const message = err instanceof Error ? err.message : t('login.errorGeneric');
 
       // Check for common errors
       if (message.includes('401') || message.includes('Invalid')) {
-        setError('Tên đăng nhập hoặc mật khẩu không đúng');
+        setError(t('login.errorInvalidCredentials'));
       } else if (message.includes('Network') || message.includes('timeout')) {
-        setError('Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.');
+        setError(t('login.errorNetwork'));
       } else {
         setError(message);
       }
@@ -80,8 +83,13 @@ export default function LoginScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.welcomeText}>Chào mừng</Text>
-        <Text style={styles.welcomeText}>bạn đến với SmartFarm</Text>
+        <View style={styles.headerTop}>
+          <View style={{ width: 40 }} />
+          <View style={{ flex: 1 }} />
+          <LanguageSelector variant="icon" />
+        </View>
+        <Text style={styles.welcomeText}>{t('login.welcome')}</Text>
+        <Text style={styles.welcomeText}>{t('login.welcomeSub')}</Text>
       </View>
 
       {/* Form card */}
@@ -104,10 +112,10 @@ export default function LoginScreen() {
             ) : null}
 
             {/* Email */}
-            <Text style={styles.label}>Tên đăng nhập hoặc Email</Text>
+            <Text style={styles.label}>{t('login.emailLabel')}</Text>
             <TextInput
               style={styles.input}
-              placeholder="example@example.com"
+              placeholder={t('login.emailPlaceholder')}
               placeholderTextColor="#A0A0A0"
               value={email}
               onChangeText={(text) => {
@@ -121,7 +129,7 @@ export default function LoginScreen() {
             />
 
             {/* Password */}
-            <Text style={styles.label}>Mật khẩu</Text>
+            <Text style={styles.label}>{t('login.passwordLabel')}</Text>
             <View style={styles.passwordContainer}>
               <TextInput
                 style={styles.passwordInput}
@@ -159,7 +167,7 @@ export default function LoginScreen() {
                 size={22}
                 color={rememberMe ? settingApp.green_primery : '#A0A0A0'}
               />
-              <Text style={styles.rememberText}>Ghi nhớ đăng nhập</Text>
+              <Text style={styles.rememberText}>{t('login.rememberMe')}</Text>
             </TouchableOpacity>
 
             {/* Login button */}
@@ -171,18 +179,18 @@ export default function LoginScreen() {
               {isLoading ? (
                 <ActivityIndicator color="#FFFFFF" size="small" />
               ) : (
-                <Text style={styles.loginButtonText}>Đăng nhập</Text>
+                <Text style={styles.loginButtonText}>{t('login.loginButton')}</Text>
               )}
             </TouchableOpacity>
 
             {/* Forgot password */}
             <TouchableOpacity style={styles.forgotButton} disabled={isLoading}>
-              <Text style={styles.forgotText}>Quên mật khẩu?</Text>
+              <Text style={styles.forgotText}>{t('login.forgotPassword')}</Text>
             </TouchableOpacity>
 
             {/* Contact store */}
             <TouchableOpacity style={styles.contactButton} disabled={isLoading}>
-              <Text style={styles.contactText}>Liên hệ nhân viên cửa hàng</Text>
+              <Text style={styles.contactText}>{t('login.contactStore')}</Text>
             </TouchableOpacity>
 
           </View>
@@ -198,10 +206,17 @@ const styles = StyleSheet.create({
     backgroundColor: settingApp.green_primery,
   },
   header: {
-    paddingTop: 80,
+    paddingTop: 60,
     paddingBottom: 50,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  headerTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    paddingHorizontal: 20,
+    marginBottom: 16,
   },
   welcomeText: {
     fontSize: 28,

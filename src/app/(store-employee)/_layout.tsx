@@ -6,10 +6,12 @@
 import settingApp from '@/settingApp';
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function StoreEmployeeLayout() {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
   return (
     <Tabs
@@ -33,7 +35,7 @@ export default function StoreEmployeeLayout() {
       <Tabs.Screen
         name="home"
         options={{
-          title: 'Trang chủ',
+          title: t('tabs.home'),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home-outline" size={size} color={color} />
           ),
@@ -42,7 +44,7 @@ export default function StoreEmployeeLayout() {
       <Tabs.Screen
         name="farms"
         options={{
-          title: 'Nông trại',
+          title: t('tabs.farms'),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="leaf-outline" size={size} color={color} />
           ),
@@ -51,7 +53,7 @@ export default function StoreEmployeeLayout() {
       <Tabs.Screen
         name="orders"
         options={{
-          title: 'Đơn hàng',
+          title: t('tabs.orders'),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="receipt-outline" size={size} color={color} />
           ),
@@ -60,7 +62,7 @@ export default function StoreEmployeeLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Tài khoản',
+          title: t('tabs.account'),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person-outline" size={size} color={color} />
           ),

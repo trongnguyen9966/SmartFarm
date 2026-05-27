@@ -15,12 +15,14 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import settingApp from '@/settingApp';
 import { Card, SearchBar, Badge, EmptyState } from '@/components/ui';
 import * as storeApi from '@/services/api/store';
 import type { FarmOwner, Farm } from '@/types/models';
 
 export default function FarmOwnersScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [farmOwners, setFarmOwners] = useState<FarmOwner[]>([]);
@@ -93,7 +95,7 @@ export default function FarmOwnersScreen() {
               <Text style={styles.ownerId}>{item.name}</Text>
             </View>
             <Badge
-              label={`${farmCount} trại`}
+              label={t('farmOwners.farmCount', { count: farmCount })}
               variant="success"
             />
           </View>
@@ -142,8 +144,8 @@ export default function FarmOwnersScreen() {
       <View style={[styles.statusBarBg, { height: insets.top }]} />
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Chủ nông trại</Text>
-        <Text style={styles.subtitle}>{farmOwners.length} chủ trại</Text>
+        <Text style={styles.title}>{t('farmOwners.title')}</Text>
+        <Text style={styles.subtitle}>{t('farmOwners.ownerCount', { count: farmOwners.length })}</Text>
       </View>
 
       {/* Content Area */}
@@ -153,7 +155,7 @@ export default function FarmOwnersScreen() {
           <SearchBar
             value={searchQuery}
             onChangeText={setSearchQuery}
-            placeholder="Tìm theo tên, SĐT, email..."
+            placeholder={t('farmOwners.searchPlaceholder')}
           />
         </View>
 
@@ -173,11 +175,11 @@ export default function FarmOwnersScreen() {
           ListEmptyComponent={
             <EmptyState
               icon="people-outline"
-              title={searchQuery ? 'Không tìm thấy kết quả' : 'Chưa có chủ trại'}
+              title={searchQuery ? t('common.notFound') : t('farmOwners.noOwners')}
               message={
                 searchQuery
-                  ? 'Thử tìm với từ khóa khác'
-                  : 'Các chủ nông trại sẽ hiển thị ở đây'
+                  ? t('common.tryOtherKeyword')
+                  : t('farmOwners.ownersWillShow')
               }
             />
           }

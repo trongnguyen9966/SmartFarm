@@ -4,20 +4,22 @@
 
 import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import settingApp from '@/settingApp';
 
 export default function StoresScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <Text style={styles.title}>Cửa hàng</Text>
+        <Text style={styles.title}>{t('investorStores.title')}</Text>
       </View>
       <View style={styles.content}>
         <View style={styles.emptyState}>
-          <Text style={styles.emptyText}>Danh sách cửa hàng được giao</Text>
-          <Text style={styles.emptySubtext}>Tính năng đang phát triển</Text>
+          <Text style={styles.emptyText}>{t('investorStores.list')}</Text>
+          <Text style={styles.emptySubtext}>{t('common.featureInProgress')}</Text>
         </View>
       </View>
     </View>

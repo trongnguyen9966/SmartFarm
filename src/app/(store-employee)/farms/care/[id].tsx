@@ -14,12 +14,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import settingApp from '@/settingApp';
 import { Card, Badge } from '@/components/ui';
 import * as storeApi from '@/services/api/store';
 import type { CareLog, CultivationLog, Garden } from '@/types/models';
 
 export default function CareLogDetailScreen() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [careLog, setCareLog] = useState<CareLog | null>(null);
@@ -97,11 +99,11 @@ export default function CareLogDetailScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Chi tiết nhật ký</Text>
+          <Text style={styles.headerTitle}>{t('care.careDetail')}</Text>
           <View style={{ width: 40 }} />
         </View>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Không tìm thấy nhật ký</Text>
+          <Text style={styles.errorText}>{t('care.notFound')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -115,7 +117,7 @@ export default function CareLogDetailScreen() {
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>
-          Nhật ký chăm sóc
+          {t('care.careLogTitle')}
         </Text>
         <View style={{ width: 40 }} />
       </View>
@@ -135,7 +137,7 @@ export default function CareLogDetailScreen() {
 
           {careLog.efficiency_percent && (
             <View style={styles.efficiencyContainer}>
-              <Text style={styles.efficiencyLabel}>Hiệu quả</Text>
+              <Text style={styles.efficiencyLabel}>{t('care.efficiency')}</Text>
               <Badge
                 label={`${careLog.efficiency_percent}%`}
                 variant={getEfficiencyColor(careLog.efficiency_percent) as 'success' | 'warning' | 'error' | 'info'}
@@ -148,7 +150,7 @@ export default function CareLogDetailScreen() {
           <View style={styles.linksSection}>
             <View style={styles.linkRow}>
               <Ionicons name="grid-outline" size={18} color="#666" />
-              <Text style={styles.linkLabel}>Vườn:</Text>
+              <Text style={styles.linkLabel}>{t('cultivation.garden')}:</Text>
               <TouchableOpacity
                 onPress={() =>
                   garden && router.push(`/(store-employee)/farms/garden/${garden.name}`)
@@ -161,7 +163,7 @@ export default function CareLogDetailScreen() {
             </View>
             <View style={styles.linkRow}>
               <Ionicons name="calendar-outline" size={18} color="#666" />
-              <Text style={styles.linkLabel}>Canh tác:</Text>
+              <Text style={styles.linkLabel}>{t('cultivation.title')}:</Text>
               <TouchableOpacity
                 onPress={() =>
                   cultivation &&
@@ -179,7 +181,7 @@ export default function CareLogDetailScreen() {
         {/* Content Section */}
         {careLog.content && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Nội dung công việc</Text>
+            <Text style={styles.sectionTitle}>{t('care.workContent')}</Text>
             <Card style={styles.contentCard}>
               <Text style={styles.contentText}>{careLog.content}</Text>
             </Card>
@@ -190,7 +192,7 @@ export default function CareLogDetailScreen() {
         {careLog.items && careLog.items.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Vật tư sử dụng</Text>
+              <Text style={styles.sectionTitle}>{t('care.materialsUsed')}</Text>
               <Badge label={`${careLog.items.length}`} variant="info" />
             </View>
 
@@ -224,21 +226,21 @@ export default function CareLogDetailScreen() {
 
         {/* Metadata Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Thông tin khác</Text>
+          <Text style={styles.sectionTitle}>{t('metadata.otherInfo')}</Text>
           <Card style={styles.metadataCard}>
             <View style={styles.metadataRow}>
               <Ionicons name="person-outline" size={16} color="#9CA3AF" />
-              <Text style={styles.metadataLabel}>Người tạo:</Text>
+              <Text style={styles.metadataLabel}>{t('metadata.createdBy')}</Text>
               <Text style={styles.metadataValue}>{careLog.owner}</Text>
             </View>
             <View style={styles.metadataRow}>
               <Ionicons name="time-outline" size={16} color="#9CA3AF" />
-              <Text style={styles.metadataLabel}>Ngày tạo:</Text>
+              <Text style={styles.metadataLabel}>{t('metadata.createdDate')}</Text>
               <Text style={styles.metadataValue}>{careLog.creation}</Text>
             </View>
             <View style={styles.metadataRow}>
               <Ionicons name="refresh-outline" size={16} color="#9CA3AF" />
-              <Text style={styles.metadataLabel}>Cập nhật:</Text>
+              <Text style={styles.metadataLabel}>{t('metadata.updatedDate')}</Text>
               <Text style={styles.metadataValue}>{careLog.modified}</Text>
             </View>
           </Card>

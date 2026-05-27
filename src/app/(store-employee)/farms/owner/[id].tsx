@@ -15,12 +15,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import settingApp from '@/settingApp';
 import { Card, Badge } from '@/components/ui';
 import * as storeApi from '@/services/api/store';
 import type { FarmOwner, Farm } from '@/types/models';
 
 export default function FarmOwnerDetailScreen() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [owner, setOwner] = useState<FarmOwner | null>(null);
@@ -76,11 +78,11 @@ export default function FarmOwnerDetailScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Chi tiết chủ trại</Text>
+          <Text style={styles.headerTitle}>{t('farmOwners.ownerDetail')}</Text>
           <View style={{ width: 40 }} />
         </View>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Không tìm thấy chủ trại</Text>
+          <Text style={styles.errorText}>{t('farmOwners.notFound')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -114,7 +116,7 @@ export default function FarmOwnerDetailScreen() {
           <Text style={styles.ownerName}>{owner.owner_name}</Text>
           <Text style={styles.ownerId}>{owner.name}</Text>
           <Badge
-            label={`${farms.length} nông trại`}
+            label={t('farmOwners.farmCountLabel', { count: farms.length })}
             variant="success"
             style={styles.badge}
           />
@@ -129,7 +131,7 @@ export default function FarmOwnerDetailScreen() {
                 <View style={[styles.contactIcon, { backgroundColor: '#E8F5E9' }]}>
                   <Ionicons name="call" size={22} color={settingApp.green_primery} />
                 </View>
-                <Text style={styles.contactLabel}>Gọi điện</Text>
+                <Text style={styles.contactLabel}>{t('farmOwners.call')}</Text>
               </TouchableOpacity>
             )}
             {owner.email && (
@@ -171,7 +173,7 @@ export default function FarmOwnerDetailScreen() {
         {/* Farms Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Danh sách nông trại</Text>
+            <Text style={styles.sectionTitle}>{t('farmOwners.farmList')}</Text>
             <Badge label={`${farms.length}`} variant="info" />
           </View>
 
@@ -197,13 +199,13 @@ export default function FarmOwnerDetailScreen() {
                     <View style={styles.farmDetail}>
                       <Ionicons name="location-outline" size={14} color="#9CA3AF" />
                       <Text style={styles.farmDetailText} numberOfLines={1}>
-                        {farm.address || 'Chưa cập nhật'}
+                        {farm.address || t('common.notUpdated')}
                       </Text>
                     </View>
                     <View style={styles.farmStats}>
                       <View style={styles.farmStat}>
                         <Text style={styles.farmStatNum}>{farm.garden_count || 0}</Text>
-                        <Text style={styles.farmStatLabel}>Vườn</Text>
+                        <Text style={styles.farmStatLabel}>{t('dashboard.gardens')}</Text>
                       </View>
                       <View style={styles.farmStat}>
                         <Text style={styles.farmStatNum}>{farm.total_area || 0}</Text>
@@ -216,7 +218,7 @@ export default function FarmOwnerDetailScreen() {
             ))
           ) : (
             <Card>
-              <Text style={styles.emptyText}>Chưa có nông trại</Text>
+              <Text style={styles.emptyText}>{t('farmOwners.noFarms')}</Text>
             </Card>
           )}
         </View>

@@ -14,12 +14,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import settingApp from '@/settingApp';
 import { Card, Badge } from '@/components/ui';
 import * as storeApi from '@/services/api/store';
 import type { CultivationLog, Garden, Farm, CareLog } from '@/types/models';
 
 export default function CultivationDetailScreen() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [cultivation, setCultivation] = useState<CultivationLog | null>(null);
@@ -84,11 +86,11 @@ export default function CultivationDetailScreen() {
   const getStatusText = (status: string) => {
     switch (status) {
       case 'In Progress':
-        return 'Đang canh tác';
+        return t('cultivation.statusActive');
       case 'Completed':
-        return 'Hoàn thành';
+        return t('cultivation.statusCompleted');
       case 'Cancelled':
-        return 'Đã hủy';
+        return t('cultivation.statusCancelled');
       default:
         return status;
     }
@@ -119,11 +121,11 @@ export default function CultivationDetailScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Chi tiết canh tác</Text>
+          <Text style={styles.headerTitle}>{t('cultivation.title')}</Text>
           <View style={{ width: 40 }} />
         </View>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Không tìm thấy dữ liệu canh tác</Text>
+          <Text style={styles.errorText}>{t('cultivation.notFound')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -166,12 +168,12 @@ export default function CultivationDetailScreen() {
           <View style={styles.statsRow}>
             <View style={styles.stat}>
               <Text style={styles.statNum}>{duration}</Text>
-              <Text style={styles.statLabel}>Ngày</Text>
+              <Text style={styles.statLabel}>{t('cultivation.days')}</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.stat}>
               <Text style={styles.statNum}>{careLogs.length}</Text>
-              <Text style={styles.statLabel}>Nhật ký</Text>
+              <Text style={styles.statLabel}>{t('dashboard.careLogs')}</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.stat}>
@@ -184,7 +186,7 @@ export default function CultivationDetailScreen() {
                   : 0}
                 %
               </Text>
-              <Text style={styles.statLabel}>Hiệu quả TB</Text>
+              <Text style={styles.statLabel}>{t('care.avgEfficiency')}</Text>
             </View>
           </View>
 
@@ -192,7 +194,7 @@ export default function CultivationDetailScreen() {
           <View style={styles.detailsSection}>
             <View style={styles.detailRow}>
               <Ionicons name="grid-outline" size={18} color="#666" />
-              <Text style={styles.detailLabel}>Vườn:</Text>
+              <Text style={styles.detailLabel}>{t('cultivation.garden')}:</Text>
               <TouchableOpacity
                 onPress={() =>
                   garden && router.push(`/(store-employee)/farms/garden/${garden.name}`)
@@ -205,7 +207,7 @@ export default function CultivationDetailScreen() {
             </View>
             <View style={styles.detailRow}>
               <Ionicons name="leaf-outline" size={18} color="#666" />
-              <Text style={styles.detailLabel}>Nông trại:</Text>
+              <Text style={styles.detailLabel}>{t('cultivation.farm')}:</Text>
               <TouchableOpacity
                 onPress={() =>
                   farm && router.push(`/(store-employee)/farms/farm/${farm.name}`)
@@ -217,14 +219,14 @@ export default function CultivationDetailScreen() {
             <View style={styles.detailRow}>
               <Ionicons name="calendar-outline" size={18} color="#666" />
               <Text style={styles.detailText}>
-                Bắt đầu: {formatDate(cultivation.from_date)}
+                {t('cultivation.startDate')}: {formatDate(cultivation.from_date)}
               </Text>
             </View>
             {cultivation.to_date && (
               <View style={styles.detailRow}>
                 <Ionicons name="flag-outline" size={18} color="#666" />
                 <Text style={styles.detailText}>
-                  Kết thúc: {formatDate(cultivation.to_date)}
+                  {t('cultivation.endDate')}: {formatDate(cultivation.to_date)}
                 </Text>
               </View>
             )}
@@ -234,7 +236,7 @@ export default function CultivationDetailScreen() {
         {/* Care Logs Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Nhật ký chăm sóc</Text>
+            <Text style={styles.sectionTitle}>{t('cultivation.careLogs')}</Text>
             <Badge label={`${careLogs.length}`} variant="info" />
           </View>
 
@@ -256,7 +258,7 @@ export default function CultivationDetailScreen() {
                         {formatDate(careLog.care_date)}
                       </Text>
                       <Text style={styles.careLogContent} numberOfLines={1}>
-                        {careLog.content || 'Không có mô tả'}
+                        {careLog.content || t('common.noDescription')}
                       </Text>
                     </View>
                     <View style={styles.careLogRight}>
@@ -280,7 +282,7 @@ export default function CultivationDetailScreen() {
                     <View style={styles.careLogItems}>
                       <Ionicons name="cube-outline" size={14} color="#9CA3AF" />
                       <Text style={styles.careLogItemsText}>
-                        {careLog.items.length} vật tư sử dụng
+                        {t('cultivation.materialsCount', { count: careLog.items.length })}
                       </Text>
                     </View>
                   )}
@@ -289,7 +291,7 @@ export default function CultivationDetailScreen() {
             ))
           ) : (
             <Card>
-              <Text style={styles.emptyText}>Chưa có nhật ký chăm sóc</Text>
+              <Text style={styles.emptyText}>{t('cultivation.noCareLogs')}</Text>
             </Card>
           )}
         </View>

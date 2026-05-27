@@ -5,6 +5,7 @@
 
 import { StyleSheet, TextInput, TouchableOpacity, View, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 interface SearchBarProps {
   value: string;
@@ -17,10 +18,13 @@ interface SearchBarProps {
 export function SearchBar({
   value,
   onChangeText,
-  placeholder = 'Tìm kiếm...',
+  placeholder,
   style,
   autoFocus,
 }: SearchBarProps) {
+  const { t } = useTranslation();
+  const displayPlaceholder = placeholder ?? t('common.search');
+
   return (
     <View style={[styles.container, style]}>
       <Ionicons name="search" size={20} color="#9CA3AF" style={styles.icon} />
@@ -28,7 +32,7 @@ export function SearchBar({
         style={styles.input}
         value={value}
         onChangeText={onChangeText}
-        placeholder={placeholder}
+        placeholder={displayPlaceholder}
         placeholderTextColor="#9CA3AF"
         autoFocus={autoFocus}
         autoCapitalize="none"

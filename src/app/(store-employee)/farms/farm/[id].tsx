@@ -14,12 +14,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import settingApp from '@/settingApp';
 import { Card, Badge } from '@/components/ui';
 import * as storeApi from '@/services/api/store';
 import type { Farm, FarmOwner, Garden, CultivationLog } from '@/types/models';
 
 export default function FarmDetailScreen() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [farm, setFarm] = useState<Farm | null>(null);
@@ -89,11 +91,11 @@ export default function FarmDetailScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Chi tiết nông trại</Text>
+          <Text style={styles.headerTitle}>{t('farmDetail.title')}</Text>
           <View style={{ width: 40 }} />
         </View>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Không tìm thấy nông trại</Text>
+          <Text style={styles.errorText}>{t('farmDetail.notFound')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -127,7 +129,7 @@ export default function FarmDetailScreen() {
           <Text style={styles.farmName}>{farm.farm_name}</Text>
           <Text style={styles.farmId}>{farm.name}</Text>
           <Badge
-            label={farm.status === 'Active' ? 'Hoạt động' : 'Ngừng hoạt động'}
+            label={farm.status === 'Active' ? t('common.active') : t('common.inactive')}
             variant={farm.status === 'Active' ? 'success' : 'error'}
             style={styles.badge}
           />
@@ -136,7 +138,7 @@ export default function FarmDetailScreen() {
           <View style={styles.statsRow}>
             <View style={styles.stat}>
               <Text style={styles.statNum}>{gardens.length}</Text>
-              <Text style={styles.statLabel}>Vườn</Text>
+              <Text style={styles.statLabel}>{t('dashboard.gardens')}</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.stat}>
@@ -146,7 +148,7 @@ export default function FarmDetailScreen() {
             <View style={styles.statDivider} />
             <View style={styles.stat}>
               <Text style={styles.statNum}>{totalArea}</Text>
-              <Text style={styles.statLabel}>m² canh tác</Text>
+              <Text style={styles.statLabel}>{t('farmDetail.sqmCultivation')}</Text>
             </View>
           </View>
 
@@ -154,7 +156,7 @@ export default function FarmDetailScreen() {
           <View style={styles.detailsSection}>
             <View style={styles.detailRow}>
               <Ionicons name="person-outline" size={18} color="#666" />
-              <Text style={styles.detailLabel}>Chủ trại:</Text>
+              <Text style={styles.detailLabel}>{t('farmDetail.farmOwner')}:</Text>
               <TouchableOpacity
                 onPress={() =>
                   owner && router.push(`/(store-employee)/farms/owner/${owner.name}`)
@@ -166,13 +168,13 @@ export default function FarmDetailScreen() {
             <View style={styles.detailRow}>
               <Ionicons name="location-outline" size={18} color="#666" />
               <Text style={styles.detailText} numberOfLines={2}>
-                {farm.address || 'Chưa cập nhật địa chỉ'}
+                {farm.address || t('farmDetail.noAddress')}
               </Text>
             </View>
             <View style={styles.detailRow}>
               <Ionicons name="storefront-outline" size={18} color="#666" />
               <Text style={styles.detailText}>
-                Cửa hàng: {farm.distribution_store}
+                {t('farmDetail.store')}: {farm.distribution_store}
               </Text>
             </View>
           </View>
@@ -181,7 +183,7 @@ export default function FarmDetailScreen() {
         {/* Gardens Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Danh sách vườn</Text>
+            <Text style={styles.sectionTitle}>{t('farmDetail.gardenList')}</Text>
             <Badge label={`${gardens.length}`} variant="info" />
           </View>
 
@@ -207,7 +209,7 @@ export default function FarmDetailScreen() {
                       <View style={styles.gardenRight}>
                         {activeCults > 0 && (
                           <Badge
-                            label={`${activeCults} canh tác`}
+                            label={t('farmDetail.cultivationCount', { count: activeCults })}
                             variant="warning"
                           />
                         )}
@@ -237,7 +239,7 @@ export default function FarmDetailScreen() {
             })
           ) : (
             <Card>
-              <Text style={styles.emptyText}>Chưa có vườn</Text>
+              <Text style={styles.emptyText}>{t('farmDetail.noGardens')}</Text>
             </Card>
           )}
         </View>

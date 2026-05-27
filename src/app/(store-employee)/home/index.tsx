@@ -8,6 +8,7 @@ import { useStoreDashboard } from '@/hooks/useStoreDashboard';
 import settingApp from '@/settingApp';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   RefreshControl,
@@ -23,8 +24,8 @@ export default function StoreEmployeeDashboard() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { userInfo } = useAuth();
+  const { t } = useTranslation();
   const { data, isLoading, error, refresh } = useStoreDashboard();
-  console.log('StoreEmployeeDashboard data:', data, 'error:', error);
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
@@ -46,8 +47,8 @@ export default function StoreEmployeeDashboard() {
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <View>
-          <Text style={styles.greeting}>Xin chào,</Text>
-          <Text style={styles.userName}>{userInfo?.full_name || 'Nhân viên'}</Text>
+          <Text style={styles.greeting}>{t('dashboard.greeting')}</Text>
+          <Text style={styles.userName}>{userInfo?.full_name || t('dashboard.defaultUser')}</Text>
         </View>
         <TouchableOpacity style={styles.notificationBtn}>
           <Ionicons name="notifications-outline" size={24} color="#FFFFFF" />
@@ -70,26 +71,26 @@ export default function StoreEmployeeDashboard() {
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>{totals.stores}</Text>
-            <Text style={styles.statLabel}>Cửa hàng</Text>
+            <Text style={styles.statLabel}>{t('dashboard.stores')}</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>{totals.farms}</Text>
-            <Text style={styles.statLabel}>Nông trại</Text>
+            <Text style={styles.statLabel}>{t('dashboard.farms')}</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>{totals.gardens}</Text>
-            <Text style={styles.statLabel}>Vườn</Text>
+            <Text style={styles.statLabel}>{t('dashboard.gardens')}</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>{totals.cultivations}</Text>
-            <Text style={styles.statLabel}>Canh tác</Text>
+            <Text style={styles.statLabel}>{t('dashboard.cultivations')}</Text>
           </View>
         </View>
 
         {/* Stores List */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Cửa hàng của bạn</Text>
+            <Text style={styles.sectionTitle}>{t('dashboard.yourStores')}</Text>
           </View>
 
           {isLoading && !data ? (
@@ -116,19 +117,19 @@ export default function StoreEmployeeDashboard() {
                   <View style={styles.storeStats}>
                     <View style={styles.storeStat}>
                       <Text style={styles.storeStatNum}>{store.farm_count}</Text>
-                      <Text style={styles.storeStatLabel}>Nông trại</Text>
+                      <Text style={styles.storeStatLabel}>{t('dashboard.farms')}</Text>
                     </View>
                     <View style={styles.storeStat}>
                       <Text style={styles.storeStatNum}>{store.garden_count}</Text>
-                      <Text style={styles.storeStatLabel}>Vườn</Text>
+                      <Text style={styles.storeStatLabel}>{t('dashboard.gardens')}</Text>
                     </View>
                     <View style={styles.storeStat}>
                       <Text style={styles.storeStatNum}>{store.active_cultivation_count}</Text>
-                      <Text style={styles.storeStatLabel}>Canh tác</Text>
+                      <Text style={styles.storeStatLabel}>{t('dashboard.cultivations')}</Text>
                     </View>
                     <View style={styles.storeStat}>
                       <Text style={styles.storeStatNum}>{store.farm_owner_count}</Text>
-                      <Text style={styles.storeStatLabel}>Chủ trại</Text>
+                      <Text style={styles.storeStatLabel}>{t('dashboard.farmOwners')}</Text>
                     </View>
                   </View>
                 </Card>
@@ -136,7 +137,7 @@ export default function StoreEmployeeDashboard() {
             ))
           ) : (
             <Card>
-              <Text style={styles.emptyText}>Chưa có cửa hàng được giao</Text>
+              <Text style={styles.emptyText}>{t('dashboard.noStores')}</Text>
             </Card>
           )}
         </View>
@@ -144,9 +145,9 @@ export default function StoreEmployeeDashboard() {
         {/* Recent Care Logs */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Nhật ký chăm sóc gần đây</Text>
+            <Text style={styles.sectionTitle}>{t('dashboard.recentCareLogs')}</Text>
             <TouchableOpacity>
-              <Text style={styles.seeAllText}>Xem tất cả</Text>
+              <Text style={styles.seeAllText}>{t('common.seeAll')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -169,14 +170,14 @@ export default function StoreEmployeeDashboard() {
             ))
           ) : (
             <Card>
-              <Text style={styles.emptyText}>Chưa có nhật ký chăm sóc</Text>
+              <Text style={styles.emptyText}>{t('dashboard.noCareLogs')}</Text>
             </Card>
           )}
         </View>
 
         {/* Quick Actions */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Thao tác nhanh</Text>
+          <Text style={styles.sectionTitle}>{t('dashboard.quickActions')}</Text>
           <View style={styles.quickActions}>
             <TouchableOpacity
               style={styles.quickAction}
@@ -185,7 +186,7 @@ export default function StoreEmployeeDashboard() {
               <View style={[styles.quickActionIcon, { backgroundColor: '#E8F5E9' }]}>
                 <Ionicons name="people" size={22} color={settingApp.green_primery} />
               </View>
-              <Text style={styles.quickActionText}>Chủ trại</Text>
+              <Text style={styles.quickActionText}>{t('dashboard.farmOwners')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -195,21 +196,21 @@ export default function StoreEmployeeDashboard() {
               <View style={[styles.quickActionIcon, { backgroundColor: '#E3F2FD' }]}>
                 <Ionicons name="receipt" size={22} color="#2196F3" />
               </View>
-              <Text style={styles.quickActionText}>Đơn hàng</Text>
+              <Text style={styles.quickActionText}>{t('dashboard.orders')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.quickAction}>
               <View style={[styles.quickActionIcon, { backgroundColor: '#FFF3E0' }]}>
                 <Ionicons name="cube" size={22} color="#FF9800" />
               </View>
-              <Text style={styles.quickActionText}>Tồn kho</Text>
+              <Text style={styles.quickActionText}>{t('dashboard.inventory')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.quickAction}>
               <View style={[styles.quickActionIcon, { backgroundColor: '#F3E5F5' }]}>
                 <Ionicons name="stats-chart" size={22} color="#9C27B0" />
               </View>
-              <Text style={styles.quickActionText}>Báo cáo</Text>
+              <Text style={styles.quickActionText}>{t('dashboard.reports')}</Text>
             </TouchableOpacity>
           </View>
         </View>

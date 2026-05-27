@@ -14,6 +14,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import settingApp from '@/settingApp';
 import { Card, SearchBar, Badge, EmptyState } from '@/components/ui';
 import * as storeApi from '@/services/api/store';
@@ -22,6 +23,7 @@ import type { SalesOrder } from '@/types/models';
 type FilterStatus = 'all' | 'pending' | 'completed';
 
 export default function OrdersScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [orders, setOrders] = useState<SalesOrder[]>([]);
@@ -101,17 +103,17 @@ export default function OrdersScreen() {
   const getStatusText = (status: string): string => {
     switch (status) {
       case 'Completed':
-        return 'Hoàn thành';
+        return t('orders.statusCompleted');
       case 'To Deliver and Bill':
-        return 'Chờ giao & thanh toán';
+        return t('orders.statusPendingDeliveryPayment');
       case 'To Deliver':
-        return 'Chờ giao hàng';
+        return t('orders.statusPendingDelivery');
       case 'To Bill':
-        return 'Chờ thanh toán';
+        return t('orders.statusPendingPayment');
       case 'Cancelled':
-        return 'Đã hủy';
+        return t('orders.statusCancelled');
       case 'Draft':
-        return 'Nháp';
+        return t('orders.statusDraft');
       default:
         return status;
     }
@@ -151,7 +153,7 @@ export default function OrdersScreen() {
           <View style={styles.orderFooter}>
             <View style={styles.orderItems}>
               <Ionicons name="cube-outline" size={16} color="#9CA3AF" />
-              <Text style={styles.itemCount}>{item.items.length} sản phẩm</Text>
+              <Text style={styles.itemCount}>{t('orders.productCount', { count: item.items.length })}</Text>
             </View>
             <Text style={styles.orderTotal}>{formatCurrency(item.grand_total)}</Text>
           </View>
@@ -164,8 +166,8 @@ export default function OrdersScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <Text style={styles.title}>Đơn hàng</Text>
-        <Text style={styles.subtitle}>{orders.length} đơn hàng</Text>
+        <Text style={styles.title}>{t('orders.title')}</Text>
+        <Text style={styles.subtitle}>{t('orders.orderCount', { count: orders.length })}</Text>
       </View>
 
       {/* Search */}
@@ -173,7 +175,7 @@ export default function OrdersScreen() {
         <SearchBar
           value={searchQuery}
           onChangeText={setSearchQuery}
-          placeholder="Tìm theo mã đơn, khách hàng..."
+          placeholder={t('orders.searchPlaceholder')}
         />
       </View>
 
@@ -189,7 +191,7 @@ export default function OrdersScreen() {
               filterStatus === 'all' && styles.filterTabTextActive,
             ]}
           >
-            Tất cả ({orders.length})
+            {t('orders.all')} ({orders.length})
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -202,7 +204,7 @@ export default function OrdersScreen() {
               filterStatus === 'pending' && styles.filterTabTextActive,
             ]}
           >
-            Đang xử lý ({pendingCount})
+            {t('orders.processing')} ({pendingCount})
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -215,7 +217,7 @@ export default function OrdersScreen() {
               filterStatus === 'completed' && styles.filterTabTextActive,
             ]}
           >
-            Hoàn thành ({completedCount})
+            {t('orders.completed')} ({completedCount})
           </Text>
         </TouchableOpacity>
       </View>
@@ -236,11 +238,11 @@ export default function OrdersScreen() {
         ListEmptyComponent={
           <EmptyState
             icon="receipt-outline"
-            title={searchQuery ? 'Không tìm thấy kết quả' : 'Chưa có đơn hàng'}
+            title={searchQuery ? t('common.notFound') : t('orders.noOrders')}
             message={
               searchQuery
-                ? 'Thử tìm với từ khóa khác'
-                : 'Các đơn hàng sẽ hiển thị ở đây'
+                ? t('common.tryOtherKeyword')
+                : t('orders.ordersWillShow')
             }
           />
         }

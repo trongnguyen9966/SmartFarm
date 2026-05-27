@@ -3,21 +3,23 @@
  */
 
 import { StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import settingApp from '@/settingApp';
 
 export default function CareLogsScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <Text style={styles.title}>Nhật ký chăm sóc</Text>
+        <Text style={styles.title}>{t('care.title')}</Text>
       </View>
       <View style={styles.content}>
         <View style={styles.emptyState}>
-          <Text style={styles.emptyText}>Danh sách nhật ký chăm sóc</Text>
-          <Text style={styles.emptySubtext}>Tính năng đang phát triển</Text>
+          <Text style={styles.emptyText}>{t('care.list')}</Text>
+          <Text style={styles.emptySubtext}>{t('common.featureInProgress')}</Text>
         </View>
       </View>
     </View>

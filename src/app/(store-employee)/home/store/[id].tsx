@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import settingApp from '@/settingApp';
 import { Card, Badge } from '@/components/ui';
 import * as storeApi from '@/services/api/store';
@@ -21,6 +22,7 @@ import type { DistributionStore } from '@/types/models';
 import type { StockLevelsResponse } from '@/types/api';
 
 export default function StoreDetailScreen() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [store, setStore] = useState<DistributionStore | null>(null);
@@ -68,11 +70,11 @@ export default function StoreDetailScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Chi tiết cửa hàng</Text>
+          <Text style={styles.headerTitle}>{t('storeDetail.title')}</Text>
           <View style={{ width: 40 }} />
         </View>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Không tìm thấy cửa hàng</Text>
+          <Text style={styles.errorText}>{t('storeDetail.notFound')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -104,22 +106,22 @@ export default function StoreDetailScreen() {
           <Text style={styles.storeName}>{store.store_name}</Text>
           <Text style={styles.storeId}>{store.name}</Text>
           <Badge
-            label={store.status === 'Active' ? 'Hoạt động' : 'Ngừng hoạt động'}
+            label={store.status === 'Active' ? t('common.active') : t('common.inactive')}
             variant={store.status === 'Active' ? 'success' : 'error'}
             style={styles.statusBadge}
           />
 
           <View style={styles.infoRow}>
             <Ionicons name="location-outline" size={18} color="#666" />
-            <Text style={styles.infoText}>{store.address || 'Chưa cập nhật địa chỉ'}</Text>
+            <Text style={styles.infoText}>{store.address || t('storeDetail.noAddress')}</Text>
           </View>
           <View style={styles.infoRow}>
             <Ionicons name="call-outline" size={18} color="#666" />
-            <Text style={styles.infoText}>{store.phone || 'Chưa cập nhật SĐT'}</Text>
+            <Text style={styles.infoText}>{store.phone || t('storeDetail.noPhone')}</Text>
           </View>
           <View style={styles.infoRow}>
             <Ionicons name="cube-outline" size={18} color="#666" />
-            <Text style={styles.infoText}>Kho: {store.warehouse}</Text>
+            <Text style={styles.infoText}>{t('storeDetail.warehouse')}: {store.warehouse}</Text>
           </View>
         </Card>
 
@@ -129,37 +131,37 @@ export default function StoreDetailScreen() {
             <View style={[styles.actionIcon, { backgroundColor: '#E8F5E9' }]}>
               <Ionicons name="people" size={24} color={settingApp.green_primery} />
             </View>
-            <Text style={styles.actionLabel}>Chủ trại</Text>
+            <Text style={styles.actionLabel}>{t('dashboard.farmOwners')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.actionCard}>
             <View style={[styles.actionIcon, { backgroundColor: '#E3F2FD' }]}>
               <Ionicons name="leaf" size={24} color="#2196F3" />
             </View>
-            <Text style={styles.actionLabel}>Nông trại</Text>
+            <Text style={styles.actionLabel}>{t('dashboard.farms')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.actionCard}>
             <View style={[styles.actionIcon, { backgroundColor: '#FFF3E0' }]}>
               <Ionicons name="receipt" size={24} color="#FF9800" />
             </View>
-            <Text style={styles.actionLabel}>Đơn hàng</Text>
+            <Text style={styles.actionLabel}>{t('dashboard.orders')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.actionCard}>
             <View style={[styles.actionIcon, { backgroundColor: '#F3E5F5' }]}>
               <Ionicons name="document-text" size={24} color="#9C27B0" />
             </View>
-            <Text style={styles.actionLabel}>Nhật ký</Text>
+            <Text style={styles.actionLabel}>{t('dashboard.careLogs')}</Text>
           </TouchableOpacity>
         </View>
 
         {/* Stock Summary */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Tồn kho</Text>
+            <Text style={styles.sectionTitle}>{t('dashboard.inventory')}</Text>
             <TouchableOpacity>
-              <Text style={styles.seeAllText}>Xem tất cả</Text>
+              <Text style={styles.seeAllText}>{t('common.seeAll')}</Text>
             </TouchableOpacity>
           </View>
 
