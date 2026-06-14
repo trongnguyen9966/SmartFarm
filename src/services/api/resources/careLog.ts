@@ -3,7 +3,7 @@
  */
 
 import type { CareLog } from '@/types/models';
-import { getList, getDoc, createDoc, updateDoc } from '../client';
+import { createDoc, getList, updateDoc } from '../client';
 
 const DOCTYPE = 'Care Log';
 
@@ -15,17 +15,23 @@ export async function list(params?: {
   order_by?: string;
 }): Promise<CareLog[]> {
   return getList<CareLog>(DOCTYPE, {
-    fields: params?.fields || [
-      'name', 'cultivation_log', 'garden', 'garden_name',
-      'care_date', 'efficiency_percent', 'owner'
-    ],
-    order_by: params?.order_by || 'care_date desc',
+    fields: params?.fields || [],
     ...params,
   });
 }
 
 export async function get(name: string): Promise<CareLog> {
-  return getDoc<CareLog>(DOCTYPE, name);
+  const results = await getList<CareLog>(DOCTYPE, {
+    fields: [
+      'name', 'cultivation_log', 'garden', 'garden_name',
+      'care_date', 'efficiency_percent', 'content', 'owner',
+      'creation', 'modified',
+    ],
+    filters: [['name', '=', name]],
+    limit_page_length: 1,
+  });
+  if (!results.length) throw new Error(`Care Log not found: ${name}`);
+  return results[0];
 }
 
 export async function create(data: Partial<CareLog>): Promise<CareLog> {

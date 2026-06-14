@@ -3,7 +3,7 @@
  */
 
 import type { FarmOwner } from '@/types/models';
-import { getList, getDoc, createDoc, updateDoc } from '../client';
+import { createDoc, getDoc, getList, updateDoc } from '../client';
 
 const DOCTYPE = 'Farm Owner';
 
@@ -15,8 +15,7 @@ export async function list(params?: {
   order_by?: string;
 }): Promise<FarmOwner[]> {
   return getList<FarmOwner>(DOCTYPE, {
-    fields: params?.fields || ['name', 'owner_name', 'phone', 'email', 'address'],
-    order_by: params?.order_by || 'owner_name asc',
+    fields: params?.fields || [],
     ...params,
   });
 }

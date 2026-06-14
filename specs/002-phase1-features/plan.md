@@ -1,518 +1,326 @@
 # Implementation Plan: Phase 1 — Feature Screens
 
-**Branch**: `002-phase1-features` | **Date**: 2026-06-14
-**References**: `esf_mobile_app_plan.md`, `specs/001-phase0-foundation/`, `INTEGRATION_GUIDE.md`
+**Branch**: `001-phase0-foundation` (current) → `002-phase1-features` (next)
+**Last Updated**: 2026-06-14
+**References**: `esf_mobile_app_plan.md`, `MOBILE_APP_SPEC.md`, `specs/001-phase0-foundation/`
 
 ---
 
-## 1. Architecture Overview
+## 1. Architecture — Current Structure
 
-### 1.1 Current Structure (Unified `(main)` Group)
+### 1.1 App Layout (Unified `(main)` Group)
 
-The app uses a single unified tab group `(main)` with 3 tabs: **Home**, **Menu**, **Profile**.
-All feature screens live inside the Menu stack, gated by role.
+The app uses a **single unified tab group** `(main)` with 3 tabs for all roles.
+Feature screens live in the Menu stack, gated by `sessionInfo.primary_role` via `useFeatures()`.
+
+> Note: Original spec described separate `(store-employee)`, `(farm-owner)`, `(investor)` tab groups.
+> The current implementation uses a unified `(main)` group — this is the correct structure going forward.
 
 ```
 src/app/
-├── _layout.tsx              # Root: auth guard → redirect to /auth/login or /(main)
-├── index.tsx                # Splash: redirects immediately
+├── _layout.tsx              # Root: FrappeProvider + AuthProvider + Stack
+├── index.tsx                # Splash: animates while isRestoringSession=true
 ├── auth/
-│   └── login.tsx            # Login screen (starting point)
+│   └── login.tsx            # Login screen
 └── (main)/
     ├── _layout.tsx           # Tab navigator: Home | Menu | Profile
     ├── home/
-    │   └── index.tsx         # Newsfeed (all roles)
+    │   └── index.tsx         # Quick menu tiles + Newsfeed (mock) — needs real dashboard
     ├── menu/
     │   ├── _layout.tsx       # Stack navigator for all feature screens
-    │   ├── index.tsx         # Menu tile grid (role-gated)
-    │   ├── orders/           ✅ Built
-    │   ├── farms/            ✅ Built
-    │   ├── gardens/          ✅ Built
-    │   ├── care-logs/        ✅ Built
-    │   ├── farm-owners/      ✅ Built
-    │   └── stores/           ✅ Built
+    │   ├── index.tsx         # Menu tile grid (role-gated via useFeatures)
+    │   ├── quick-menu-settings.tsx  # Toggle up to 4 quick tiles
+    │   ├── farms/            ✅ list + detail
+    │   ├── gardens/          ✅ list + detail
+    │   ├── care-logs/        ✅ list + detail
+    │   ├── farm-owners/      ✅ list + detail
+    │   ├── stores/           ✅ list + detail
+    │   └── orders/           ✅ list + detail
     └── profile/
-        └── index.tsx         # Profile + logout
+        └── index.tsx         # Profile, language selector, logout
 ```
 
-### 1.2 Navigation Flow
+### 1.2 Auth & Session Flow
 
 ```
-Login → /(main)/home (Newsfeed)
-             ↓ Tab: Menu
-        /(main)/menu (Tile grid, role-gated)
-             ↓ Tap tile
-        /(main)/menu/<feature>/index (List)
-             ↓ Tap item
-        /(main)/menu/<feature>/[name] (Detail)
+App start
+  └── isRestoringSession=true (AuthContext)
+       ├── Load sessionInfo from AsyncStorage → setSessionInfo
+       ├── Load credentials from SecureStore
+       │    └── frappeLogin(username, password) → updateCurrentUser
+       └── setIsRestoringSession(false)
+            └── isLoading=false → splash navigates
+
+Login
+  └── frappeLogin → getUser → getSessionInfo (API)
+       └── persistSessionInfo → AsyncStorage + React state
+
+Logout
+  └── frappeLogout → persistSessionInfo(null) → clearTokens → /auth/login
 ```
 
-### 1.3 Role → Menu Tiles Mapping
+### 1.3 Permission & Menu Architecture
 
-| Tile | Store Employee | Farm Owner | Investor |
-|------|:-:|:-:|:-:|
-| Farms | ✅ route | ✅ route | — |
-| Gardens | — | ✅ route | — |
-| Orders | ✅ route | — | — |
-| Care Logs | ✅ route | ✅ route | — |
-| Farm Owners | ✅ route | — | ✅ route |
-| Stores | — | — | ✅ route |
-| Cultivation Logs | — | ➕ needed | — |
-| Inventory/Stock | ✅ (P2) | — | — |
-| Reports | ✅ (P2) | — | ✅ (P2) |
-| Purchase Requests | — | ✅ (P2) | — |
-| Revenue | — | — | ✅ (P2) |
+```
+sessionInfo (from AsyncStorage or API)
+  ├── primary_role   → role badge, default quick menu, home dashboard type
+  ├── roles[]        → ROLE_FEATURES map → feature key list
+  └── permissions{}  → DocType read gate (optional, fallback to roles)
+
+useFeatures() → string[]     (hook: derived from sessionInfo)
+useQuickMenu()               (hook: AsyncStorage per-user, max 4 tiles)
+usePrimaryRole()             (hook: sessionInfo.primary_role)
+```
+
+**Role → Feature mapping** (`src/constants/api.ts`):
+
+| Feature key | Store Employee | Farm Owner | Investor |
+|-------------|:-:|:-:|:-:|
+| `farms` | ✅ | — | — |
+| `myFarms` | — | ✅ | — |
+| `orders` | ✅ | — | — |
+| `farmOwners` | ✅ | — | ✅ |
+| `careLogs` | ✅ | ✅ | — |
+| `gardens` | — | ✅ | — |
+| `stores` | — | — | ✅ |
+| `deliveryNotes` | ✅ | — | — |
+| `inventory` | ✅ | — | — |
+| `cultivationLogs` | — | ✅ | — |
+| `purchaseRequests` | — | ✅ | — |
+| `revenue` | — | — | ✅ |
+| `reports` | ✅ | — | ✅ |
 
 ---
 
-## 2. Current State vs API Plan
+## 2. Current State — What Is Built
 
-### 2.1 What Is Built (Phase 0 Output)
+### 2.1 Foundation (Phase 0) — COMPLETE
 
-| Screen | File | API Used | Status |
-|--------|------|----------|--------|
-| Login | `auth/login.tsx` | `esf.api.auth.login` | ✅ Done |
-| Home / Newsfeed | `(main)/home/index.tsx` | Mock data | ✅ Done (mock) |
-| Menu tile grid | `(main)/menu/index.tsx` | Local role check | ✅ Done |
-| Farms list | `menu/farms/index.tsx` | `GET /api/resource/Farm` | ✅ Done |
-| Farm detail | `menu/farms/[name].tsx` | Farm + Gardens (parallel) | ✅ Done |
-| Gardens list | `menu/gardens/index.tsx` | `GET /api/resource/Garden` | ✅ Done |
-| Garden detail | `menu/gardens/[name].tsx` | `GET /api/resource/Garden/<name>` | ✅ Done |
-| Care Logs list | `menu/care-logs/index.tsx` | `GET /api/resource/Care Log` | ✅ Done |
-| Care Log detail | `menu/care-logs/[name].tsx` | `GET /api/resource/Care Log/<name>` | ✅ Done |
-| Farm Owners list | `menu/farm-owners/index.tsx` | `GET /api/resource/Farm Owner` | ✅ Done |
-| Farm Owner detail | `menu/farm-owners/[name].tsx` | FarmOwner + Farms (parallel) | ✅ Done |
-| Stores list | `menu/stores/index.tsx` | `GET /api/resource/Distribution Store` | ✅ Done |
-| Store detail | `menu/stores/[name].tsx` | `GET /api/resource/Distribution Store/<name>` | ✅ Done |
-| Orders list | `menu/orders/index.tsx` | `GET /api/resource/Sales Order` | ✅ Done |
-| Order detail | `menu/orders/[name].tsx` | `GET /api/resource/Sales Order/<name>` | ✅ Done |
-| Profile | `(main)/profile/index.tsx` | Session info | ✅ Done |
+| Area | Files | Status |
+|------|-------|--------|
+| Auth (login, logout, session restore) | `AuthContext.tsx`, `tokenStorage.ts` | ✅ |
+| Session persistence (AsyncStorage) | `tokenStorage.ts` — `saveSessionInfo/getSessionInfo/clearSessionInfo` | ✅ |
+| Loading state on app restore | `isRestoringSession` in AuthContext | ✅ |
+| Permission-based menu | `useFeatures()`, `usePermission.ts`, `constants/api.ts` | ✅ |
+| Quick menu (4 tiles, user-customizable) | `useQuickMenu.ts`, `constants/quickMenu.ts`, `quick-menu-settings.tsx` | ✅ |
+| Language selector (login + profile) | `LanguageSelector.tsx` (variant=icon/listItem) | ✅ |
+| i18n (vi/en/zh) | `src/i18n/locales/` — terminology: Vườn/Chủ vườn/Khu vườn | ✅ |
+| Splash screen with session wait | `index.tsx` — waits for `isLoading=false` | ✅ |
 
-### 2.2 What Is Missing (Phase 1 Remaining)
+### 2.2 Feature Screens — Built
 
-| Screen | File (to create) | API Required | Priority |
-|--------|-----------------|--------------|----------|
-| Store Employee Dashboard | Replace `home/index.tsx` mock | `esf.api.store.get_dashboard` | HIGH |
-| Farm Owner Dashboard | Same (role-conditional) | `esf.api.farm_owner.get_dashboard` | HIGH |
-| Investor Dashboard | Same (role-conditional) | `esf.api.investor.get_dashboard` | HIGH |
-| Cultivation Logs list | `menu/cultivation-logs/index.tsx` | `GET /api/resource/Cultivation Log` | HIGH |
-| Cultivation Log detail | `menu/cultivation-logs/[name].tsx` | `GET /api/resource/Cultivation Log/<name>` | HIGH |
-| Delivery Notes list | `menu/delivery-notes/index.tsx` | `GET /api/resource/Delivery Note` | MED |
-| Delivery Note detail | `menu/delivery-notes/[name].tsx` | `GET /api/resource/Delivery Note/<name>` | MED |
-| Stock Levels | `menu/stock/index.tsx` | `esf.api.store.get_stock_levels` | MED |
-| Investor Revenue | `menu/revenue/index.tsx` | `esf.api.investor.get_revenue_detail` | MED |
-| Investor Revenue Detail | `menu/revenue/[store].tsx` | `esf.api.investor.get_revenue_detail` | MED |
+| Screen | File | API | Status |
+|--------|------|-----|--------|
+| Farms list | `menu/farms/index.tsx` | `GET /api/resource/Farm` | ✅ |
+| Farm detail | `menu/farms/[name].tsx` | Farm + Gardens parallel | ✅ |
+| Gardens (khu vườn) list | `menu/gardens/index.tsx` | `GET /api/resource/Garden` | ✅ |
+| Garden detail | `menu/gardens/[name].tsx` | `GET /api/resource/Garden/<name>` | ✅ |
+| Care Logs list | `menu/care-logs/index.tsx` | `GET /api/resource/Care Log` | ✅ |
+| Care Log detail | `menu/care-logs/[name].tsx` | `GET /api/resource/Care Log/<name>` | ✅ |
+| Farm Owners list | `menu/farm-owners/index.tsx` | `GET /api/resource/Farm Owner` | ✅ |
+| Farm Owner detail | `menu/farm-owners/[name].tsx` | FarmOwner + Farms parallel | ✅ |
+| Stores list | `menu/stores/index.tsx` | `GET /api/resource/Distribution Store` | ✅ |
+| Store detail | `menu/stores/[name].tsx` | `GET /api/resource/Distribution Store/<name>` | ✅ |
+| Orders list | `menu/orders/index.tsx` | `GET /api/resource/Sales Order` | ✅ |
+| Order detail | `menu/orders/[name].tsx` | `GET /api/resource/Sales Order/<name>` | ✅ |
+| Profile | `profile/index.tsx` | sessionInfo | ✅ |
+| Menu tile grid | `menu/index.tsx` | useFeatures() | ✅ |
+| Quick menu settings | `menu/quick-menu-settings.tsx` | AsyncStorage | ✅ |
 
-### 2.3 Phase 2 (Deferred — CRUD)
-
-| Feature | Requires | Phase |
-|---------|----------|-------|
-| Create/Edit Garden | Form screen | P2 |
-| Create/Edit Care Log | Form screen + item picker | P2 |
-| Create/Edit Cultivation Log | Form screen | P2 |
-| Create Sales Order | Form + item search | P2 |
-| Create Delivery Note from SO | ERPNext method | P2 |
-| Purchase Request | SPEC-011 DocType | P2 |
-| Nearest Store GPS | `get_nearest_store` endpoint | P2 |
-| File upload (photos) | `/api/method/upload_file` | P2 |
-
----
-
-## 3. Screen Architecture
-
-### 3.1 Home Screen — Role-Conditional Dashboard
-
-The current newsfeed mock should be replaced with a role-conditional dashboard.
-
-**Dashboard layout per role**:
-
-#### Store Employee (`esf.api.store.get_dashboard`)
-```
-┌─────────────────────────────────┐
-│  Header: SmartFarm + notifications │
-├─────────────────────────────────┤
-│  Greeting: "Xin chào, {name}"   │
-│  Store: {store_name}            │
-├─────────────────────────────────┤
-│  Stats row (4 cards):           │
-│  [Farms] [Gardens] [Cultivations] [Farm Owners] │
-├─────────────────────────────────┤
-│  Recent Care Logs (last 5)      │
-│  → tap: navigate to care log detail │
-└─────────────────────────────────┘
-```
-
-#### Farm Owner (`esf.api.farm_owner.get_dashboard`)
-```
-┌─────────────────────────────────┐
-│  Header: SmartFarm              │
-├─────────────────────────────────┤
-│  Profile card: {owner_name}     │
-├─────────────────────────────────┤
-│  Stats row: [Farms] [Gardens] [Active Cultivations] │
-├─────────────────────────────────┤
-│  My Farms (list, tap → detail)  │
-├─────────────────────────────────┤
-│  Recent Care Logs               │
-└─────────────────────────────────┘
-```
-
-#### Investor (`esf.api.investor.get_dashboard`)
-```
-┌─────────────────────────────────┐
-│  Header: SmartFarm + period picker │
-├─────────────────────────────────┤
-│  Total revenue card             │
-├─────────────────────────────────┤
-│  Stats: [Orders] [Farms] [Gardens] │
-├─────────────────────────────────┤
-│  Stores list with per-store revenue │
-│  → tap: navigate to revenue detail  │
-└─────────────────────────────────┘
-```
-
-### 3.2 Cultivation Logs (New Screens)
-
-**For Farm Owner** (added to `farmOwnerItems` in `menu/index.tsx`):
-```
-key: 'cultivationLogs'
-icon: 'leaf-outline'
-route: '/(main)/menu/cultivation-logs'
-```
-
-**List screen** (`cultivation-logs/index.tsx`):
-- Fields: `name`, `garden`, `garden_name`, `cultivation_master`, `cultivation_type`, `from_date`, `to_date`, `status`
-- Status badge: In Progress=blue, Completed=green, Cancelled=gray
-- Filter: search by garden name or cultivation type
-
-**Detail screen** (`cultivation-logs/[name].tsx`):
-- Full cultivation log info
-- Garden link → navigate to garden detail
-- Status badge
-- Dates: from, to, expected harvest
-- Notes
-- Metadata (owner, creation)
-
-### 3.3 Delivery Notes (New Screens — Store Employee)
-
-Added to `storeEmployeeItems` in `menu/index.tsx`:
-```
-key: 'deliveryNotes'
-icon: 'car-outline'
-color: '#4CAF50'
-route: '/(main)/menu/delivery-notes'
-```
-
-**List screen** (`delivery-notes/index.tsx`):
-- Fields: `name`, `customer_name`, `grand_total`, `status`, `posting_date`
-- Filter by `custom_distribution_store`
-- Status badge: Draft=gray, To Bill=orange, Completed=green, Cancelled=red
-
-**Detail screen** (`delivery-notes/[name].tsx`):
-- Header: customer name
-- Status badge + posting date
-- Items table (item_name, qty, rate, amount)
-- Total/grand total
-- Metadata
-
-### 3.4 Stock Levels (New Screen — Store Employee)
-
-Added to `storeEmployeeItems`:
-```
-key: 'inventory'
-route: '/(main)/menu/stock'
-```
-
-**Screen** (`stock/index.tsx`):
-- Requires store context from auth
-- Calls `esf.api.store.get_stock_levels` with `distribution_store`
-- Group by `item_group` (expandable sections)
-- Search by item name/code
-- Show `actual_qty` + `uom` per item
-- Item image (if available)
-
-### 3.5 Investor Revenue (New Screens)
-
-Added to `investorItems`:
-```
-key: 'revenue'
-route: '/(main)/menu/revenue'
-```
-
-**List screen** (`revenue/index.tsx`):
-- Calls `esf.api.investor.get_assigned_stores` to get stores list
-- Calls `esf.api.investor.get_revenue_detail` per store (or dashboard for summary)
-- Shows per-store revenue cards with order count
-
-**Detail screen** (`revenue/[store].tsx`):
-- Calls `esf.api.investor.get_revenue_detail` with `distribution_store`
-- Period picker: This Month / Last Month / This Quarter / This Year
-- Revenue total card
-- Revenue by item group (bar chart or list)
-- Orders list (recent, tap → order detail)
-
----
-
-## 4. API Service Layer — What Needs to Be Added
-
-### 4.1 Missing Resource Services
+### 2.3 API Service Layer — Built
 
 ```
-src/services/api/resources/
-├── careLog.ts             ✅ exists
-├── cultivationLog.ts      ✅ exists
-├── deliveryNote.ts        ✅ exists
-├── distributionStore.ts   ✅ exists
-├── farm.ts               ✅ exists
-├── farmOwner.ts          ✅ exists
-├── garden.ts             ✅ exists
-├── salesOrder.ts         ✅ exists
-└── index.ts              ✅ exists
-```
-
-All standard REST resource services exist. Need to add **custom RPC services**:
-
-### 4.2 Custom RPC Services (to create)
-
-**`src/services/api/rpc/store.ts`**:
-```ts
-export async function getDashboard(): Promise<StoreDashboard>
-export async function getStockLevels(params: StockLevelParams): Promise<StockLevelResult>
-```
-
-**`src/services/api/rpc/farmOwner.ts`**:
-```ts
-export async function getDashboard(): Promise<FarmOwnerDashboard>
-export async function getMyFarmOwner(): Promise<FarmOwner>
-```
-
-**`src/services/api/rpc/investor.ts`**:
-```ts
-export async function getDashboard(params?: PeriodParams): Promise<InvestorDashboard>
-export async function getRevenueDetail(store: string, params?: PeriodParams): Promise<RevenueDetail>
-export async function getAssignedStores(): Promise<{ stores: AssignedStore[] }>
-export async function getFarmOwners(params?: PaginationParams): Promise<FarmOwnerListResult>
-```
-
-### 4.3 New Type Definitions (to add to `types/models/index.ts`)
-
-```ts
-// Dashboard types
-interface StoreDashboardStore { name, store_name, warehouse, farm_count, garden_count, active_cultivation_count, farm_owner_count }
-interface StoreDashboard { stores: StoreDashboardStore[], recent_care_logs: RecentCareLog[] }
-interface FarmDashboardItem { name, farm_name, distribution_store, store_name, status, garden_count, active_cultivation_count }
-interface FarmOwnerDashboard { farm_owner: FarmOwner, farms: FarmDashboardItem[], recent_care_logs: RecentCareLog[], total_gardens: number, active_cultivations: number }
-interface InvestorStoreRevenue { name, store_name, total_revenue, order_count, farm_count, garden_count }
-interface InvestorDashboard { stores: InvestorStoreRevenue[], total_revenue, total_orders, total_farms, total_gardens, revenue_trend: { month, revenue }[] }
-interface RevenueDetail { distribution_store, store_name, total_revenue, orders: SalesOrder[], revenue_by_item_group: { item_group, total }[] }
-interface StockItem { item_code, item_name, item_group, custom_usage_type, actual_qty, uom, image }
-interface StockLevelResult { warehouse, items: StockItem[], total_count }
+src/services/api/
+├── client.ts                    ✅ axios base client with auth header
+└── resources/
+    ├── careLog.ts               ✅
+    ├── cultivationLog.ts        ✅
+    ├── deliveryNote.ts          ✅
+    ├── distributionStore.ts     ✅
+    ├── farm.ts                  ✅
+    ├── farmOwner.ts             ✅
+    ├── garden.ts                ✅
+    ├── salesOrder.ts            ✅
+    └── index.ts                 ✅ (re-exports all)
 ```
 
 ---
 
-## 5. Menu Index Updates
+## 3. What Needs to Be Built — Phase 1 Remaining
 
-Current `menu/index.tsx` needs these additions:
+### 3.1 Missing Screens
 
-### Store Employee — add:
-```ts
-{ key: 'cultivationLogs', icon: 'leaf-outline', color: '#4CAF50', bg: '#F1F8E9', label: t('menu.cultivationLogs'), route: '/(main)/menu/cultivation-logs' },
-{ key: 'deliveryNotes', icon: 'car-outline', color: '#4CAF50', bg: '#E8F5E9', label: t('menu.deliveryNotes'), route: '/(main)/menu/delivery-notes' },
-// inventory: update route from '' to '/(main)/menu/stock'
+| Screen | File (to create) | API | Role | Priority |
+|--------|-----------------|-----|------|----------|
+| Cultivation Logs list | `menu/cultivation-logs/index.tsx` | `GET /api/resource/Cultivation Log` | Store Employee, Farm Owner | HIGH |
+| Cultivation Log detail | `menu/cultivation-logs/[name].tsx` | `GET /api/resource/Cultivation Log/<name>` | Store Employee, Farm Owner | HIGH |
+| Delivery Notes list | `menu/delivery-notes/index.tsx` | `GET /api/resource/Delivery Note` | Store Employee | MED |
+| Delivery Note detail | `menu/delivery-notes/[name].tsx` | `GET /api/resource/Delivery Note/<name>` | Store Employee | MED |
+| Stock / Inventory | `menu/stock/index.tsx` | `esf.api.store.get_stock_levels` | Store Employee | MED |
+| Investor Revenue list | `menu/revenue/index.tsx` | `esf.api.investor.get_assigned_stores` | Investor | LOW (blocked) |
+| Investor Revenue detail | `menu/revenue/[store].tsx` | `esf.api.investor.get_revenue_detail` | Investor | LOW (blocked) |
+
+### 3.2 Home Screen — Role Dashboard (replaces mock newsfeed)
+
+Current `home/index.tsx` has quick menu + static newsfeed mock.
+Needs to show role-specific dashboard data **below** the quick menu section.
+
+| Role | API | Response Fields |
+|------|-----|-----------------|
+| Store Employee | `esf.api.store.get_dashboard` | `stores[]`, `recent_care_logs[]` |
+| Farm Owner | `esf.api.farm_owner.get_dashboard` | `farm_owner`, `farms[]`, `recent_care_logs[]`, `total_gardens`, `active_cultivations` |
+| Investor | `esf.api.investor.get_dashboard` | `stores[]`, `total_revenue`, `total_orders`, `revenue_trend[]` |
+
+**Home screen layout** (below quick menu):
+```
+[Quick Menu tiles — existing]
+───────────────────────────
+[Greeting + role stats row]   ← NEW
+[Recent care logs / farms / revenue summary]  ← NEW
 ```
 
-### Farm Owner — add:
-```ts
-{ key: 'cultivationLogs', icon: 'leaf-outline', color: '#4CAF50', bg: '#F1F8E9', label: t('menu.cultivationLogs'), route: '/(main)/menu/cultivation-logs' },
+### 3.3 RPC Service Layer (to create)
+
+```
+src/services/api/rpc/
+├── store.ts       # getDashboard(), getStockLevels(params)
+├── farmOwner.ts   # getDashboard(), getMyFarmOwner()
+├── investor.ts    # getDashboard(period?), getRevenueDetail(store, period?), getAssignedStores(), getFarmOwners(params?)
+└── index.ts       # re-exports
 ```
 
-### Investor — update:
+All use `useFrappePostCall` from frappe-react-sdk or direct `apiClient.post('/api/method/...')`.
+
+---
+
+## 4. Menu Route Activation
+
+Routes currently empty (`route: ''`) in `MENU_ITEM_CONFIGS` that need activation:
+
+| Key | Current route | Target route | Sprint |
+|-----|---------------|--------------|--------|
+| `deliveryNotes` | `''` | `/(main)/menu/delivery-notes` | Sprint 3 |
+| `inventory` | `''` | `/(main)/menu/stock` | Sprint 4 |
+| `cultivationLogs` | `''` | `/(main)/menu/cultivation-logs` | Sprint 2 |
+| `purchaseRequests` | `''` | `/(main)/menu/purchase-requests` | Phase 2 |
+| `revenue` | `''` | `/(main)/menu/revenue` | Sprint 5 |
+| `reports` | `''` | `/(main)/menu/reports` | Phase 2 |
+
+---
+
+## 5. i18n Keys to Add
+
+Add to `vi.ts`, `en.ts`, `zh.ts`:
+
 ```ts
-// revenue: update route from '' to '/(main)/menu/revenue'
+cultivationLogs: {
+  title: 'Nhật ký canh tác',
+  list: 'Danh sách nhật ký canh tác',
+  detail: 'Chi tiết nhật ký canh tác',
+  notFound: 'Không tìm thấy nhật ký canh tác',
+  statusInProgress: 'Đang thực hiện',
+  statusCompleted: 'Hoàn thành',
+  statusCancelled: 'Đã hủy',
+  fromDate: 'Ngày bắt đầu',
+  toDate: 'Ngày kết thúc',
+  cultivationType: 'Loại canh tác',
+},
+deliveryNotes: {
+  title: 'Phiếu giao hàng',
+  list: 'Danh sách phiếu giao hàng',
+  detail: 'Chi tiết phiếu giao hàng',
+  notFound: 'Không tìm thấy phiếu giao hàng',
+  postingDate: 'Ngày giao',
+  statusDraft: 'Nháp',
+  statusToBill: 'Chờ thanh toán',
+  statusCompleted: 'Hoàn thành',
+  statusCancelled: 'Đã hủy',
+},
+stock: {
+  title: 'Tồn kho',
+  availableQty: 'Tồn kho',
+  noItems: 'Không có hàng tồn kho',
+  searchPlaceholder: 'Tìm theo tên, mã hàng...',
+},
+revenue: {
+  title: 'Doanh thu',
+  totalRevenue: 'Tổng doanh thu',
+  orderCount: 'Đơn hàng',
+  byItemGroup: 'Theo danh mục',
+  thisMonth: 'Tháng này',
+  lastMonth: 'Tháng trước',
+  thisQuarter: 'Quý này',
+  thisYear: 'Năm này',
+},
 ```
 
 ---
 
-## 6. Translation Keys Needed
-
-Add to `src/i18n/locales/en.json` and `vi.json`:
-
-```json
-{
-  "menu": {
-    "cultivationLogs": "Cultivation Logs",
-    "deliveryNotes": "Delivery Notes",
-    "stock": "Inventory",
-    "revenue": "Revenue"
-  },
-  "cultivationLogs": {
-    "title": "Cultivation Logs",
-    "notFound": "No cultivation logs found",
-    "status": {
-      "inProgress": "In Progress",
-      "completed": "Completed",
-      "cancelled": "Cancelled"
-    },
-    "fromDate": "Start Date",
-    "toDate": "End Date",
-    "expectedHarvest": "Expected Harvest",
-    "cultivationType": "Type"
-  },
-  "deliveryNotes": {
-    "title": "Delivery Notes",
-    "notFound": "No delivery notes found",
-    "postingDate": "Posting Date"
-  },
-  "stock": {
-    "title": "Inventory",
-    "availableQty": "Available",
-    "noItems": "No items in stock"
-  },
-  "revenue": {
-    "title": "Revenue",
-    "totalRevenue": "Total Revenue",
-    "orderCount": "Orders",
-    "byItemGroup": "By Category",
-    "period": {
-      "thisMonth": "This Month",
-      "lastMonth": "Last Month",
-      "thisQuarter": "This Quarter",
-      "thisYear": "This Year"
-    }
-  },
-  "dashboard": {
-    "farms": "Farms",
-    "gardens": "Gardens",
-    "activeCultivations": "Active",
-    "farmOwners": "Farm Owners",
-    "recentCareLogs": "Recent Care Logs",
-    "viewAll": "View All"
-  }
-}
-```
-
----
-
-## 7. Implementation Task Order
-
-### Sprint 1 — Dashboards (highest value, replaces mock home)
-
-1. Add `StoreDashboard`, `FarmOwnerDashboard`, `InvestorDashboard` types
-2. Create `src/services/api/rpc/` directory with `store.ts`, `farmOwner.ts`, `investor.ts`
-3. Rewrite `home/index.tsx` → role-conditional dashboard using custom endpoints
-4. Update translation files with `dashboard.*` keys
+## 6. Implementation Sprint Order
 
 ### Sprint 2 — Cultivation Logs
 
-5. Create `menu/cultivation-logs/index.tsx` (list)
-6. Create `menu/cultivation-logs/[name].tsx` (detail)
-7. Update `menu/index.tsx` — add cultivation logs tile to Store Employee + Farm Owner
-8. Update translation files with `cultivationLogs.*` keys
+1. Create `menu/cultivation-logs/index.tsx` (list, filter by garden/type)
+2. Create `menu/cultivation-logs/[name].tsx` (detail: dates, status, care logs link)
+3. Update `MENU_ITEM_CONFIGS` route: `cultivationLogs` → `/(main)/menu/cultivation-logs`
+4. Add `cultivationLogs.*` i18n keys to vi/en/zh
+5. `cultivationLogs` already in `ROLE_FEATURES` for both Store Employee + Farm Owner
 
 ### Sprint 3 — Delivery Notes
 
-9. Create `menu/delivery-notes/index.tsx` (list, filter by store)
-10. Create `menu/delivery-notes/[name].tsx` (detail with items table)
-11. Update `menu/index.tsx` — add delivery notes tile to Store Employee
-12. Update translation files with `deliveryNotes.*` keys
+6. Create `menu/delivery-notes/index.tsx` (filter by `custom_distribution_store` from context)
+7. Create `menu/delivery-notes/[name].tsx` (detail with items table)
+8. Update `MENU_ITEM_CONFIGS` route: `deliveryNotes` → `/(main)/menu/delivery-notes`
+9. Add `deliveryNotes.*` i18n keys
 
-### Sprint 4 — Stock Levels
+### Sprint 4 — Stock / Inventory
 
-13. Create `src/services/api/rpc/store.ts` — `getStockLevels()`
-14. Create `menu/stock/index.tsx`
-15. Update `menu/index.tsx` — activate inventory route for Store Employee
-16. Update translation files with `stock.*` keys
+10. Create `src/services/api/rpc/store.ts` — `getStockLevels(distributionStore, params)`
+11. Create `menu/stock/index.tsx` (search + group by item_group, shows actual_qty)
+12. Update `MENU_ITEM_CONFIGS` route: `inventory` → `/(main)/menu/stock`
+13. Add `stock.*` i18n keys
 
-### Sprint 5 — Investor Revenue
+### Sprint 5 — Home Dashboard
 
-17. Create `src/services/api/rpc/investor.ts`
-18. Create `menu/revenue/index.tsx` (per-store summary)
-19. Create `menu/revenue/[store].tsx` (detail with period picker)
-20. Update `menu/index.tsx` — activate revenue route for Investor
-21. Update translation files with `revenue.*` keys
+14. Create `src/services/api/rpc/store.ts` — `getDashboard()`
+15. Create `src/services/api/rpc/farmOwner.ts` — `getDashboard()`, `getMyFarmOwner()`
+16. Update `home/index.tsx` — add role-conditional dashboard section below quick menu
+17. Add `dashboard.*` i18n keys
 
----
+### Sprint 6 — Investor Revenue (requires SPEC-010)
 
-## 8. Investor Module Prerequisite
-
-**Blocked by**: SPEC-010 (Investor Assignment DocType)
-
-Until SPEC-010 is implemented on the backend:
-- `esf.api.investor.get_dashboard` will return empty data
-- `esf.api.investor.get_assigned_stores` will return `[]`
-- `esf.api.investor.get_farm_owners` will return `[]`
-- Investor Cultivation/Care Log views will be unfiltered (security risk)
-
-**Mitigation**: Build investor screens against the agreed API contract. Test with mock data. Enable when SPEC-010 is deployed.
+18. Create `src/services/api/rpc/investor.ts`
+19. Create `menu/revenue/index.tsx` (per-store summary cards)
+20. Create `menu/revenue/[store].tsx` (period picker + orders list)
+21. Update `MENU_ITEM_CONFIGS` route: `revenue` → `/(main)/menu/revenue`
+22. Add `revenue.*` i18n keys
 
 ---
 
-## 9. Complete File Tree (Target State)
+## 7. Phase 2 (Deferred)
 
-```
-src/app/(main)/menu/
-├── index.tsx                    ✅ (update: add cultivation-logs, delivery-notes tiles)
-├── orders/
-│   ├── index.tsx                ✅
-│   └── [name].tsx               ✅
-├── farms/
-│   ├── index.tsx                ✅
-│   └── [name].tsx               ✅
-├── gardens/
-│   ├── index.tsx                ✅
-│   └── [name].tsx               ✅
-├── care-logs/
-│   ├── index.tsx                ✅
-│   └── [name].tsx               ✅
-├── farm-owners/
-│   ├── index.tsx                ✅
-│   └── [name].tsx               ✅
-├── stores/
-│   ├── index.tsx                ✅
-│   └── [name].tsx               ✅
-├── cultivation-logs/            ➕ Sprint 2
-│   ├── index.tsx
-│   └── [name].tsx
-├── delivery-notes/              ➕ Sprint 3
-│   ├── index.tsx
-│   └── [name].tsx
-├── stock/                       ➕ Sprint 4
-│   └── index.tsx
-└── revenue/                     ➕ Sprint 5
-    ├── index.tsx
-    └── [store].tsx
-
-src/services/api/
-├── client.ts                    ✅
-├── resources/
-│   ├── careLog.ts               ✅
-│   ├── cultivationLog.ts        ✅
-│   ├── deliveryNote.ts          ✅
-│   ├── distributionStore.ts     ✅
-│   ├── farm.ts                  ✅
-│   ├── farmOwner.ts             ✅
-│   ├── garden.ts                ✅
-│   ├── salesOrder.ts            ✅
-│   └── index.ts                 ✅
-└── rpc/                         ➕ Sprint 1
-    ├── store.ts
-    ├── farmOwner.ts
-    ├── investor.ts
-    └── index.ts
-
-src/app/(main)/home/
-└── index.tsx                    🔄 Sprint 1 (replace mock with dashboard)
-```
+| Feature | Blocker | Notes |
+|---------|---------|-------|
+| Create/Edit Garden | — | Form screen, P2 |
+| Create/Edit Care Log | — | With item picker child table |
+| Create/Edit Cultivation Log | — | Form screen |
+| Create Sales Order | — | Item search, submit |
+| Create Delivery Note from SO | — | ERPNext method |
+| Purchase Requests | SPEC-011 DocType | GPS nearest store |
+| File upload (photos) | — | Care Log / Cultivation Log attachments |
+| Reports (charts) | — | Investor + Store Employee |
+| Offline queue | — | PRD Section 19.6 |
 
 ---
 
-## 10. Conventions to Follow
-
-All new screens must follow the established pattern:
+## 8. Code Conventions (Must Follow)
 
 ```tsx
-// 1. useCallback loadData + useEffect
+// Loading/error pattern
+const [loading, setLoading] = useState(true);
+const [error, setError] = useState<string | null>(null);
+const [data, setData] = useState<T | null>(null);
+
 const loadData = useCallback(async () => {
   try {
     setLoading(true); setError(null);
@@ -523,17 +331,92 @@ const loadData = useCallback(async () => {
 }, [t]);
 useEffect(() => { loadData(); }, [loadData]);
 
-// 2. Early returns for loading/error
 if (loading) return <LoadingScreen message={t('common.loading')} />;
 if (error) return <ErrorScreen message={error} onRetry={loadData} />;
-
-// 3. Green header with back button + safe area insets
-// 4. Status badges: Active=#059669, Inactive=#6B7280
-//    SO status: Draft=gray, To Deliver=#D97706, Completed=#059669, Cancelled=#DC2626
-//    Efficiency: ≥80%=#059669, ≥50%=#D97706, <50%=#DC2626
-//    CultivationLog: In Progress=#2563EB, Completed=#059669, Cancelled=#6B7280
-// 5. settingApp.green_primery for header background
-// 6. keyExtractor={item => item.name} (Frappe doc name)
-// 7. encodeURIComponent(item.name) for route params
-// 8. decodeURIComponent(name) on detail screen
 ```
+
+**Style conventions**:
+- Header bg: `settingApp.green_primery`
+- Screen bg: `#F5F5F5`
+- Card bg: `#FFFFFF`, `borderRadius: 12`
+- Back button: `<Ionicons name="arrow-back" size={24} color="#FFFFFF" />`
+- Status badge colors:
+  - Active / Completed: `#059669` (green)
+  - Inactive / Cancelled: `#6B7280` (gray)
+  - Pending / Draft: `#D97706` (amber)
+  - In Progress: `#2563EB` (blue)
+  - Error: `#DC2626` (red)
+- Route params: `encodeURIComponent(item.name)` → `decodeURIComponent(name)` on detail
+- List key: `keyExtractor={item => item.name}`
+- Frappe doc `name` field = unique ID (not numeric)
+
+---
+
+## 9. Blocked Features (Investor Module)
+
+**Blocked by**: SPEC-010 (Investor Assignment DocType) — not started on backend.
+
+Until SPEC-010 deploys:
+- `esf.api.investor.get_dashboard` → empty data
+- `esf.api.investor.get_assigned_stores` → `[]`
+- `esf.api.investor.get_revenue_detail` → empty
+- Investor Cultivation/Care Log access is unfiltered (security risk — do not expose)
+
+**Mitigation**: Build investor screens with mock data behind a `__DEV__` flag. Enable when backend deploys.
+
+---
+
+## 10. API Quick Reference
+
+### Custom RPC Endpoints
+
+| Endpoint | Role | Phase |
+|----------|------|-------|
+| `esf.api.auth.get_session_info` | All | P0 ✅ |
+| `esf.api.store.get_dashboard` | Store Employee | P1 |
+| `esf.api.store.get_stock_levels` | Store Employee | P1 |
+| `esf.api.farm_owner.get_dashboard` | Farm Owner | P1 |
+| `esf.api.farm_owner.get_my_farm_owner` | Farm Owner | P1 |
+| `esf.api.investor.get_dashboard` | Investor | P1 (blocked SPEC-010) |
+| `esf.api.investor.get_assigned_stores` | Investor | P1 (blocked) |
+| `esf.api.investor.get_revenue_detail` | Investor | P1 (blocked) |
+| `esf.api.investor.get_farm_owners` | Investor | P1 (blocked) |
+| `esf.api.farm_owner.create_purchase_request` | Farm Owner | P2 (blocked SPEC-011) |
+| `esf.api.farm_owner.get_nearest_store` | Farm Owner | P2 |
+
+### Standard REST (already in service layer)
+
+```
+GET /api/resource/Farm
+GET /api/resource/Farm/<name>
+GET /api/resource/Garden
+GET /api/resource/Garden/<name>
+GET /api/resource/Care Log
+GET /api/resource/Care Log/<name>
+GET /api/resource/Cultivation Log
+GET /api/resource/Cultivation Log/<name>
+GET /api/resource/Farm Owner
+GET /api/resource/Farm Owner/<name>
+GET /api/resource/Distribution Store
+GET /api/resource/Distribution Store/<name>
+GET /api/resource/Sales Order?filters=[["custom_distribution_store","=","DS-xxx"]]
+GET /api/resource/Sales Order/<name>
+GET /api/resource/Delivery Note?filters=[["custom_distribution_store","=","DS-xxx"]]
+GET /api/resource/Delivery Note/<name>
+```
+
+---
+
+## 11. Terminology (Vietnamese)
+
+| Domain term | Vietnamese | Notes |
+|-------------|-----------|-------|
+| Farm | Vườn | Main unit |
+| Garden (sub-plot) | Khu vườn | Sub-unit within a Vườn |
+| Farm Owner | Chủ vườn | |
+| Store (Distribution Store) | Cửa hàng | |
+| Care Log | Nhật ký chăm sóc | |
+| Cultivation Log | Nhật ký canh tác | |
+| Sales Order | Đơn hàng | |
+| Delivery Note | Phiếu giao hàng | |
+| Stock / Inventory | Tồn kho | |

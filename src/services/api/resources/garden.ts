@@ -3,7 +3,7 @@
  */
 
 import type { Garden } from '@/types/models';
-import { getList, getDoc, createDoc, updateDoc } from '../client';
+import { createDoc, getDoc, getList, updateDoc } from '../client';
 
 const DOCTYPE = 'Garden';
 
@@ -15,8 +15,7 @@ export async function list(params?: {
   order_by?: string;
 }): Promise<Garden[]> {
   return getList<Garden>(DOCTYPE, {
-    fields: params?.fields || ['name', 'garden_name', 'farm', 'farm_owner', 'status', 'area', 'area_uom'],
-    order_by: params?.order_by || 'garden_name asc',
+    fields: params?.fields || [],
     ...params,
   });
 }

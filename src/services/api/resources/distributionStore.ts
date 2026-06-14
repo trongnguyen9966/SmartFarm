@@ -3,7 +3,7 @@
  */
 
 import type { DistributionStore } from '@/types/models';
-import { getList, getDoc } from '../client';
+import { getDoc, getList } from '../client';
 
 const DOCTYPE = 'Distribution Store';
 
@@ -14,7 +14,7 @@ export async function list(params?: {
   limit_page_length?: number;
 }): Promise<DistributionStore[]> {
   return getList<DistributionStore>(DOCTYPE, {
-    fields: params?.fields || ['name', 'store_name', 'warehouse', 'address', 'phone', 'status'],
+    fields: params?.fields || [],
     ...params,
   });
 }
