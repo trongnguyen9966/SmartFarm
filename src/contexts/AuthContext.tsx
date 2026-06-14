@@ -3,9 +3,9 @@
  * Provides auth state and actions throughout the app using frappe-react-sdk hooks
  */
 
+import { USER_ROLES } from '@/constants/api';
 import * as TokenStorage from '@/services/auth/tokenStorage';
 import type { SessionInfoResponse } from '@/types/api';
-import { USER_ROLES } from '@/constants/api';
 import { useRouter, useSegments } from 'expo-router';
 import { useFrappeAuth, useFrappeGetDoc, useFrappePostCall } from 'frappe-react-sdk';
 import React, { createContext, useCallback, useEffect, useRef, useState } from 'react';
@@ -62,6 +62,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const segments = useSegments();
   const hasRestoredSession = useRef(false);
   const [sessionInfo, setSessionInfo] = useState<SessionInfoResponse | null>(null);
+  const [isRestoringSession, setIsRestoringSession] = useState(true);
+
+  // Persist sessionInfo to AsyncStorage whenever it changes
+  const persistSessionInfo = useCallback((data: SessionInfoResponse | null) => {
+    setSessionInfo(data);
+    if (data) {
+      TokenStorage.saveSessionInfo(data).catch(() => {});
+    } else {
+      TokenStorage.clearSessionInfo().catch(() => {});
+    }
+  }, []);
 
   // frappe-react-sdk: auth state (single source of truth)
   const {
@@ -91,17 +102,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     'esf.api.auth.get_session_info'
   );
 
-  const isLoading = frappeIsLoading || isValidating;
+  const isLoading = frappeIsLoading || isValidating || isRestoringSession;
   const isAuthenticated = !!currentUser;
-
-  if (__DEV__) {
-    console.log('[Auth] State:', {
-      currentUser,
-      fullName: userInfo?.full_name,
-      isLoading,
-      error: error?.message,
-    });
-  }
 
   // Restore session from stored credentials on mount
   useEffect(() => {
@@ -110,15 +112,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     const restoreSession = async () => {
       try {
+        // Restore persisted sessionInfo immediately so menu/permissions load without waiting for API
+        const storedSession = await TokenStorage.getSessionInfo();
+        if (storedSession) {
+          console.log('[Auth] Restored sessionInfo from storage');
+          setSessionInfo(storedSession as SessionInfoResponse);
+        }
+
         const hasCredentials = await TokenStorage.hasStoredCredentials();
         if (!hasCredentials) {
-          console.log('[Auth] No stored credentials');
           return;
         }
 
         const credentials = await TokenStorage.getCredentials();
         if (credentials) {
-          console.log('[Auth] Restoring session...');
           await frappeLogin({
             username: credentials.username,
             password: credentials.password,
@@ -131,6 +138,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       } catch (err) {
         console.log('[Auth] Session restore failed, clearing credentials');
         await TokenStorage.clearAll();
+      } finally {
+        setIsRestoringSession(false);
       }
     };
 
@@ -148,7 +157,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     if (!primaryRole) return;
 
     console.log('[Auth] Fallback sessionInfo from userInfo.roles | primary_role:', primaryRole);
-    setSessionInfo({
+    persistSessionInfo({
       user: userInfo.name || '',
       full_name: userInfo.full_name || '',
       roles,
@@ -156,7 +165,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       permissions: {},
       context: {},
     });
-  }, [userInfo, sessionInfo]);
+  }, [userInfo, sessionInfo, persistSessionInfo]);
 
   // Handle navigation based on auth state
   useEffect(() => {
@@ -205,7 +214,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // useFrappePostCall wraps response in { message: T }, unwrap it
       const sessionData = ((sessionResult as any)?.message ?? sessionResult) as SessionInfoResponse;
       if (sessionData?.primary_role || sessionData?.roles?.length) {
-        setSessionInfo(sessionData);
+        persistSessionInfo(sessionData);
         console.log('[Auth] Session roles:', sessionData.roles, '| primary_role:', sessionData.primary_role);
       }
 
@@ -218,7 +227,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.error('[Auth] Login error:', err);
       throw err;
     }
-  }, [frappeLogin, getUserCookie, updateCurrentUser, getUser, getSessionInfo]);
+  }, [frappeLogin, getUserCookie, updateCurrentUser, getUser, getSessionInfo, persistSessionInfo]);
 
   /**
    * Logout and clear session
@@ -228,14 +237,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       await frappeLogout();
       document.cookie = 'user_id=; max-age=0';
-      setSessionInfo(null);
+      persistSessionInfo(null);
       await TokenStorage.clearTokens();
       await TokenStorage.clearUserData();
       router.replace('/auth/login');
     } catch (err) {
       console.error('[Auth] Logout error:', err);
       document.cookie = 'user_id=; max-age=0';
-      setSessionInfo(null);
+      persistSessionInfo(null);
       await TokenStorage.clearTokens();
       await TokenStorage.clearUserData();
       router.replace('/auth/login');

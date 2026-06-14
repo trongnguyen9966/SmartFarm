@@ -13,6 +13,7 @@ const STORAGE_KEYS = {
   USER_DATA: 'esf_user_data',
   CRED_USR: 'esf_cred_usr',
   CRED_PWD: 'esf_cred_pwd',
+  SESSION_INFO: 'esf_session_info',
 } as const;
 
 // Check if secure store is available (not available on web)
@@ -182,4 +183,33 @@ export async function clearAll(): Promise<void> {
 export async function hasStoredCredentials(): Promise<boolean> {
   const creds = await getCredentials();
   return creds !== null;
+}
+
+/**
+ * Save session info (roles, permissions, primary_role)
+ */
+export async function saveSessionInfo(data: unknown): Promise<void> {
+  await Storage.setItem(STORAGE_KEYS.SESSION_INFO, JSON.stringify(data));
+}
+
+/**
+ * Get stored session info
+ */
+export async function getSessionInfo(): Promise<unknown | null> {
+  const data = await Storage.getItem(STORAGE_KEYS.SESSION_INFO);
+  if (data) {
+    try {
+      return JSON.parse(data);
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+/**
+ * Clear stored session info
+ */
+export async function clearSessionInfo(): Promise<void> {
+  await Storage.removeItem(STORAGE_KEYS.SESSION_INFO);
 }

@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LanguageSelector } from '@/components/ui/LanguageSelector';
 
 export default function ProfileScreen() {
   const { currentUser, userInfo, logout, isLoading } = useAuth();
@@ -82,6 +83,10 @@ export default function ProfileScreen() {
             <Text style={styles.menuText}>{t('profile.settings')}</Text>
             <Ionicons name="chevron-forward" size={20} color="#999" />
           </TouchableOpacity>
+
+          <View style={styles.menuItem}>
+            <LanguageSelector variant="listItem" />
+          </View>
 
           <TouchableOpacity style={[styles.menuItem, styles.menuItemLast]}>
             <Ionicons name="help-circle-outline" size={22} color="#333" />
