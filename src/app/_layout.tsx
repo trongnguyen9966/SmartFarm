@@ -37,11 +37,7 @@ export default function RootLayout() {
               <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="index" />
                 <Stack.Screen name="auth" />
-                <Stack.Screen name="(store-employee)" />
-                <Stack.Screen name="(farm-owner)" />
-                <Stack.Screen name="(investor)" />
-                {/* Keep old tabs for backward compatibility, will be removed later */}
-                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="(main)" />
               </Stack>
             </View>
           </AuthProvider>

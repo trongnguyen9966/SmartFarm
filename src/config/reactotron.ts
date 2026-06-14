@@ -2,25 +2,20 @@ import Reactotron from 'reactotron-react-native';
 import { reactotronRedux } from 'reactotron-redux';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const reactotron = Reactotron.setAsyncStorageHandler(AsyncStorage)
-  .configure({
-    name: 'SmartFarm',
-  })
-  .useReactNative({
-    asyncStorage: true,
-    networking: {
-      ignoreUrls: /symbolicate|logs/,
-    },
-    editor: false,
-    errors: { veto: () => false },
-    overlay: false,
-  })
-  .use(reactotronRedux())
-  .connect();
+let reactotron: typeof Reactotron | null = null;
 
-// Extend console to use Reactotron logging
-if (__DEV__) {
-  console.tron = reactotron;
+try {
+  reactotron = Reactotron.setAsyncStorageHandler(AsyncStorage)
+    .configure({ name: 'SmartFarm' })
+    .useReactNative()
+    .use(reactotronRedux())
+    .connect() as any;
+
+  if (__DEV__) {
+    (console as any).tron = reactotron;
+  }
+} catch (e) {
+  console.warn('[Reactotron] Failed to initialize:', e);
 }
 
 export default reactotron;

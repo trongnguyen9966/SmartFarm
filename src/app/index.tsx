@@ -48,7 +48,7 @@ export default function SplashPage() {
       hasNavigated.current = true;
 
       if (isAuthenticated) {
-        router.replace('/(store-employee)/home' as any);
+        router.replace('/(main)/home' as any);
       } else {
         router.replace('/auth/login');
       }

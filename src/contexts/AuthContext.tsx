@@ -3,7 +3,6 @@
  * Provides auth state and actions throughout the app using frappe-react-sdk hooks
  */
 
-import { USER_ROLES } from '@/constants/api';
 import * as TokenStorage from '@/services/auth/tokenStorage';
 import type { SessionInfoResponse } from '@/types/api';
 import { useRouter, useSegments } from 'expo-router';
@@ -43,17 +42,8 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 // Helper: Get route for role
 // ============================================
 
-function getRouteForRole(primaryRole: string | undefined): string {
-  switch (primaryRole) {
-    case USER_ROLES.FARM_OWNER:
-      return '/(farm-owner)/home';
-    case USER_ROLES.INVESTOR:
-      return '/(investor)/home';
-    case USER_ROLES.STORE_EMPLOYEE:
-      return '/(store-employee)/home';
-    default:
-      return '/(store-employee)/home';
-  }
+function getRouteForRole(_primaryRole: string | undefined): string {
+  return '/(main)/home';
 }
 
 // ============================================
@@ -151,11 +141,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const firstSegment = segments[0] as string;
     const inAuthGroup = firstSegment === 'auth';
     const inSplash = !firstSegment || firstSegment === 'index';
-    const inProtectedGroup =
-      firstSegment === '(store-employee)' ||
-      firstSegment === '(farm-owner)' ||
-      firstSegment === '(investor)' ||
-      firstSegment === '(tabs)';
+    const inProtectedGroup = firstSegment === '(main)';
 
     if (!isAuthenticated && inProtectedGroup) {
       console.log('[Auth] Redirecting to login (not authenticated)');

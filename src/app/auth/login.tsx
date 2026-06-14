@@ -330,36 +330,4 @@ const styles = StyleSheet.create({
     color: settingApp.green_primery,
     textDecorationLine: 'underline',
   },
-  devModeContainer: {
-    marginTop: 32,
-    padding: 16,
-    backgroundColor: '#FFF8E1',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#FFE082',
-  },
-  devModeTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#F57C00',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  devAccount: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    marginBottom: 6,
-  },
-  devAccountText: {
-    fontSize: 13,
-    color: '#333',
-  },
-  devAccountHint: {
-    fontSize: 12,
-    color: '#888',
-    textAlign: 'center',
-    marginTop: 8,
-  },
 });

@@ -11,7 +11,8 @@
     "jsEngine": "hermes",
     "ios": {
       "icon": "./assets/expo.icon",
-      "backgroundColor": "#00D09E"
+      "backgroundColor": "#00D09E",
+      "bundleIdentifier": "com.nguyentran.SmartFarm"
     },
     "android": {
       "adaptiveIcon": {
