@@ -118,6 +118,16 @@ export default {
     purchaseRequests: 'Purchase Requests',
     stores: 'Stores',
     revenue: 'Revenue',
+    deliveryNotes: 'Delivery Notes',
+    cultivationLogs: 'Cultivation Logs',
+  },
+  quickMenu: {
+    quickAccess: 'Quick Access',
+    title: 'Customize Quick Menu',
+    subtitle: '{{current}}/{{max}} features selected',
+    hint: 'Max {{max}} features shown on home screen',
+    maxTitle: 'Limit Reached',
+    maxAlert: 'You already have 4 features selected. Please disable one to add a new feature.',
   },
   farmOwnerHome: {
     defaultUser: 'Farm Owner',

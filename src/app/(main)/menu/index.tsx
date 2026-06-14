@@ -1,12 +1,13 @@
 /**
  * Menu Screen
  * Shows feature tiles based on user's permissions (role-based).
- * All roles share this single screen; visibility is controlled by usePermission/useHasRole.
+ * All roles share this single screen; visibility is controlled by useFeatures() + ROLE_FEATURES map.
  */
 
 import { useAuth } from '@/hooks/useAuth';
-import { useHasRole, usePrimaryRole } from '@/hooks/usePermission';
+import { useFeatures, usePrimaryRole } from '@/hooks/usePermission';
 import { USER_ROLES } from '@/constants/api';
+import { MENU_ITEM_CONFIGS } from '@/constants/quickMenu';
 import settingApp from '@/settingApp';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -20,63 +21,27 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-interface MenuItem {
-  key: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  color: string;
-  bg: string;
-  label: string;
-  route: string;
-}
-
 export default function MenuScreen() {
   const { userInfo } = useAuth();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const primaryRole = usePrimaryRole();
-  const isStoreEmployee = useHasRole(USER_ROLES.STORE_EMPLOYEE);
-  const isFarmOwner = useHasRole(USER_ROLES.FARM_OWNER);
-  const isInvestor = useHasRole(USER_ROLES.INVESTOR);
+  const features = useFeatures();
 
-  const storeEmployeeItems: MenuItem[] = [
-    { key: 'farms', icon: 'leaf-outline', color: settingApp.green_primery, bg: '#E8F5E9', label: t('menu.farms'), route: '/(main)/menu/farms' },
-    { key: 'orders', icon: 'receipt-outline', color: '#2196F3', bg: '#E3F2FD', label: t('menu.orders'), route: '/(main)/menu/orders' },
-    { key: 'inventory', icon: 'cube-outline', color: '#FF9800', bg: '#FFF3E0', label: t('menu.inventory'), route: '' },
-    { key: 'reports', icon: 'stats-chart-outline', color: '#9C27B0', bg: '#F3E5F5', label: t('menu.reports'), route: '' },
-    { key: 'farmOwners', icon: 'people-outline', color: '#00BCD4', bg: '#E0F7FA', label: t('menu.farmOwners'), route: '/(main)/menu/farm-owners' },
-    { key: 'careLogs', icon: 'clipboard-outline', color: '#FF5722', bg: '#FBE9E7', label: t('menu.careLogs'), route: '/(main)/menu/care-logs' },
-  ];
-
-  const farmOwnerItems: MenuItem[] = [
-    { key: 'myFarms', icon: 'leaf-outline', color: settingApp.green_primery, bg: '#E8F5E9', label: t('menu.myFarms'), route: '/(main)/menu/farms' },
-    { key: 'gardens', icon: 'flower-outline', color: '#4CAF50', bg: '#F1F8E9', label: t('menu.gardens'), route: '/(main)/menu/gardens' },
-    { key: 'careLogs', icon: 'clipboard-outline', color: '#FF5722', bg: '#FBE9E7', label: t('menu.careLogs'), route: '/(main)/menu/care-logs' },
-    { key: 'purchaseRequests', icon: 'cart-outline', color: '#FF9800', bg: '#FFF3E0', label: t('menu.purchaseRequests'), route: '' },
-  ];
-
-  const investorItems: MenuItem[] = [
-    { key: 'stores', icon: 'storefront-outline', color: '#2196F3', bg: '#E3F2FD', label: t('menu.stores'), route: '/(main)/menu/stores' },
-    { key: 'revenue', icon: 'bar-chart-outline', color: '#9C27B0', bg: '#F3E5F5', label: t('menu.revenue'), route: '' },
-    { key: 'farmOwners', icon: 'people-outline', color: '#00BCD4', bg: '#E0F7FA', label: t('menu.farmOwners'), route: '/(main)/menu/farm-owners' },
-    { key: 'reports', icon: 'stats-chart-outline', color: '#FF5722', bg: '#FBE9E7', label: t('menu.reports'), route: '' },
-  ];
+  // Attach translated labels and filter by user's enabled features
+  const menuItems = MENU_ITEM_CONFIGS
+    .filter(item => features.includes(item.key))
+    .map(item => ({ ...item, label: t(`menu.${item.key}`) }));
 
   const getRoleLabel = () => {
-    if (isStoreEmployee) return t('profile.roleStoreEmployee');
-    if (isFarmOwner) return t('profile.roleFarmOwner');
-    if (isInvestor) return t('profile.roleInvestor');
-    return primaryRole || '';
+    switch (primaryRole) {
+      case USER_ROLES.STORE_EMPLOYEE: return t('profile.roleStoreEmployee');
+      case USER_ROLES.FARM_OWNER:     return t('profile.roleFarmOwner');
+      case USER_ROLES.INVESTOR:       return t('profile.roleInvestor');
+      default:                        return primaryRole || '';
+    }
   };
-
-  const getMenuItems = (): MenuItem[] => {
-    if (isStoreEmployee) return storeEmployeeItems;
-    if (isFarmOwner) return farmOwnerItems;
-    if (isInvestor) return investorItems;
-    return [];
-  };
-
-  const menuItems = getMenuItems();
 
   return (
     <View style={styles.container}>

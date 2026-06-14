@@ -4,10 +4,13 @@
  */
 
 import { useAuth } from '@/hooks/useAuth';
+import { useQuickMenu } from '@/hooks/useQuickMenu';
+import { getMenuItemConfig } from '@/constants/quickMenu';
 import settingApp from '@/settingApp';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useRouter } from 'expo-router';
 import {
   FlatList,
   StyleSheet,
@@ -90,6 +93,8 @@ export default function HomeScreen() {
   const { userInfo } = useAuth();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const { quickKeys } = useQuickMenu();
   const [postText, setPostText] = useState('');
   const [feed, setFeed] = useState<Post[]>(MOCK_FEED);
 
@@ -191,29 +196,64 @@ export default function HomeScreen() {
         renderItem={renderPost}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
-          /* Post composer */
-          <View style={styles.composer}>
-            <View style={styles.composerAvatar}>
-              <Ionicons name="person" size={22} color="#FFFFFF" />
-            </View>
-            <TouchableOpacity
-              style={styles.composerInput}
-              activeOpacity={1}
-            >
-              <TextInput
-                style={styles.composerText}
-                placeholder={t('newsfeed.whatOnYourMind', { name: userInfo?.full_name?.split(' ')[0] || '' })}
-                placeholderTextColor="#9CA3AF"
-                value={postText}
-                onChangeText={setPostText}
-                multiline
-              />
-            </TouchableOpacity>
-            {postText.trim().length > 0 && (
-              <TouchableOpacity style={styles.postBtn} onPress={handlePost}>
-                <Ionicons name="send" size={20} color={settingApp.green_primery} />
-              </TouchableOpacity>
+          <View>
+            {/* Quick Access Bar */}
+            {quickKeys.length > 0 && (
+              <View style={styles.quickSection}>
+                <View style={styles.quickHeader}>
+                  <Text style={styles.quickTitle}>{t('quickMenu.quickAccess')}</Text>
+                  <TouchableOpacity
+                    onPress={() => router.push('/(main)/menu/quick-menu-settings' as never)}
+                    style={styles.quickSettingsBtn}
+                  >
+                    <Ionicons name="settings-outline" size={18} color="#6B7280" />
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.quickRow}>
+                  {quickKeys.map(key => {
+                    const config = getMenuItemConfig(key);
+                    if (!config) return null;
+                    return (
+                      <TouchableOpacity
+                        key={key}
+                        style={styles.quickTile}
+                        onPress={() => { if (config.route) router.push(config.route as never); }}
+                      >
+                        <View style={[styles.quickIcon, { backgroundColor: config.bg }]}>
+                          <Ionicons name={config.icon} size={22} color={config.color} />
+                        </View>
+                        <Text style={styles.quickLabel} numberOfLines={1}>{t(`menu.${key}`)}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
             )}
+
+            {/* Post composer */}
+            <View style={styles.composer}>
+              <View style={styles.composerAvatar}>
+                <Ionicons name="person" size={22} color="#FFFFFF" />
+              </View>
+              <TouchableOpacity
+                style={styles.composerInput}
+                activeOpacity={1}
+              >
+                <TextInput
+                  style={styles.composerText}
+                  placeholder={t('newsfeed.whatOnYourMind', { name: userInfo?.full_name?.split(' ')[0] || '' })}
+                  placeholderTextColor="#9CA3AF"
+                  value={postText}
+                  onChangeText={setPostText}
+                  multiline
+                />
+              </TouchableOpacity>
+              {postText.trim().length > 0 && (
+                <TouchableOpacity style={styles.postBtn} onPress={handlePost}>
+                  <Ionicons name="send" size={20} color={settingApp.green_primery} />
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
         }
         contentContainerStyle={{ paddingBottom: 20 }}
@@ -252,6 +292,34 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  quickSection: {
+    backgroundColor: '#FFFFFF',
+    paddingTop: 12,
+    paddingBottom: 4,
+    marginBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  quickHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    marginBottom: 10,
+  },
+  quickTitle: { fontSize: 13, fontWeight: '600', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.5 },
+  quickSettingsBtn: { padding: 4 },
+  quickRow: { flexDirection: 'row', justifyContent: 'center', paddingHorizontal: 16, paddingBottom: 12, gap: 20 },
+  quickTile: { alignItems: 'center', flex: 1, maxWidth: 72 },
+  quickIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  quickLabel: { fontSize: 11, color: '#374151', fontWeight: '500', textAlign: 'center' },
   composer: {
     backgroundColor: '#FFFFFF',
     padding: 12,

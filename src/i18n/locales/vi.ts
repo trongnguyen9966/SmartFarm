@@ -118,6 +118,16 @@ export default {
     purchaseRequests: 'Yêu cầu mua hàng',
     stores: 'Cửa hàng',
     revenue: 'Doanh thu',
+    deliveryNotes: 'Phiếu giao hàng',
+    cultivationLogs: 'Nhật ký canh tác',
+  },
+  quickMenu: {
+    quickAccess: 'Truy cập nhanh',
+    title: 'Tùy chỉnh menu nhanh',
+    subtitle: 'Đã chọn {{current}}/{{max}} tính năng',
+    hint: 'Tối đa {{max}} tính năng hiển thị trên trang chủ',
+    maxTitle: 'Đã đạt giới hạn',
+    maxAlert: 'Bạn đã chọn 4 tính năng. Vui lòng tắt 1 tính năng để thêm tính năng mới.',
   },
   farmOwnerHome: {
     defaultUser: 'Chủ nông trại',

@@ -48,6 +48,28 @@ export const USER_ROLES = {
 
 export type UserRole = (typeof USER_ROLES)[keyof typeof USER_ROLES];
 
+// Feature keys enabled per role
+// Used by menu/index.tsx to filter which tiles to show
+export const ROLE_FEATURES: Record<string, string[]> = {
+  [USER_ROLES.STORE_EMPLOYEE]: ['farms', 'orders', 'farmOwners', 'careLogs', 'deliveryNotes', 'inventory'],
+  [USER_ROLES.FARM_OWNER]: ['myFarms', 'gardens', 'careLogs', 'cultivationLogs', 'purchaseRequests'],
+  [USER_ROLES.INVESTOR]: ['stores', 'revenue', 'farmOwners', 'reports'],
+};
+
+// Maps feature key → Frappe DocType for permission read check
+// If a feature key is NOT listed here, it is always visible (no DocType gate)
+export const FEATURE_DOCTYPE_MAP: Record<string, string> = {
+  farms:           'Farm',
+  myFarms:         'Farm',
+  orders:          'Sales Order',
+  gardens:         'Garden',
+  careLogs:        'Care Log',
+  cultivationLogs: 'Cultivation Log',
+  farmOwners:      'Farm Owner',
+  stores:          'Distribution Store',
+  deliveryNotes:   'Delivery Note',
+};
+
 // Pagination defaults
 export const PAGINATION = {
   DEFAULT_PAGE_SIZE: 20,

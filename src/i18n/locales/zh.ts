@@ -118,6 +118,16 @@ export default {
     purchaseRequests: '采购申请',
     stores: '门店',
     revenue: '收入',
+    deliveryNotes: '交货单',
+    cultivationLogs: '种植日志',
+  },
+  quickMenu: {
+    quickAccess: '快速访问',
+    title: '自定义快捷菜单',
+    subtitle: '已选 {{current}}/{{max}} 个功能',
+    hint: '首页最多显示 {{max}} 个功能',
+    maxTitle: '已达上限',
+    maxAlert: '您已选择4个功能。请关闭一个功能后再添加新功能。',
   },
   farmOwnerHome: {
     defaultUser: '农场主',

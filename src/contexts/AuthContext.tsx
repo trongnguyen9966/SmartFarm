@@ -5,9 +5,12 @@
 
 import * as TokenStorage from '@/services/auth/tokenStorage';
 import type { SessionInfoResponse } from '@/types/api';
+import { USER_ROLES } from '@/constants/api';
 import { useRouter, useSegments } from 'expo-router';
 import { useFrappeAuth, useFrappeGetDoc, useFrappePostCall } from 'frappe-react-sdk';
 import React, { createContext, useCallback, useEffect, useRef, useState } from 'react';
+
+const ESF_ROLES = Object.values(USER_ROLES) as string[];
 
 // ============================================
 // Types
@@ -134,6 +137,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
     restoreSession();
   }, [frappeLogin, getUserCookie, updateCurrentUser]);
 
+  // Fallback: build sessionInfo from userInfo.roles when getSessionInfo API is unavailable
+  // Fires whenever userInfo loads (e.g. after session restore or fresh login)
+  useEffect(() => {
+    if (sessionInfo) return; // already set from API
+    if (!userInfo?.roles?.length) return;
+
+    const roles = userInfo.roles.map(r => r.role);
+    const primaryRole = roles.find(r => ESF_ROLES.includes(r));
+    if (!primaryRole) return;
+
+    console.log('[Auth] Fallback sessionInfo from userInfo.roles | primary_role:', primaryRole);
+    setSessionInfo({
+      user: userInfo.name || '',
+      full_name: userInfo.full_name || '',
+      roles,
+      primary_role: primaryRole as SessionInfoResponse['primary_role'],
+      permissions: {},
+      context: {},
+    });
+  }, [userInfo, sessionInfo]);
+
   // Handle navigation based on auth state
   useEffect(() => {
     if (isLoading) return;
@@ -177,9 +201,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       // Fetch user session info and store it
       const sessionResult = await getSessionInfo({});
-      console.log('[Auth] Session info:', sessionResult);
-      if (sessionResult) {
-        setSessionInfo(sessionResult as unknown as SessionInfoResponse);
+      console.log('[Auth] Session info RAW:', sessionResult);
+      // useFrappePostCall wraps response in { message: T }, unwrap it
+      const sessionData = ((sessionResult as any)?.message ?? sessionResult) as SessionInfoResponse;
+      if (sessionData?.primary_role || sessionData?.roles?.length) {
+        setSessionInfo(sessionData);
+        console.log('[Auth] Session roles:', sessionData.roles, '| primary_role:', sessionData.primary_role);
       }
 
       if (rememberMe) {
