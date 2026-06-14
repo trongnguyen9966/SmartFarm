@@ -120,6 +120,9 @@ export default {
     revenue: '收入',
     deliveryNotes: '交货单',
     cultivationLogs: '种植日志',
+    groupGarden: '农园管理',
+    groupStore: '门店',
+    groupReport: '报告与财务',
   },
   quickMenu: {
     quickAccess: '快速访问',

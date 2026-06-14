@@ -13,30 +13,28 @@ export function useQuickMenu() {
   const [quickKeys, setQuickKeys] = useState<string[]>([]);
   const [loaded, setLoaded] = useState(false);
 
+  const load = useCallback(async () => {
+    if (!currentUser || !primaryRole) return;
+    try {
+      const saved = await AsyncStorage.getItem(storageKey(currentUser));
+      if (saved) {
+        const parsed: string[] = JSON.parse(saved);
+        setQuickKeys(parsed.filter(k => allFeatures.includes(k)));
+      } else {
+        const defaults = (DEFAULT_QUICK_MENU[primaryRole] ?? [])
+          .filter(k => allFeatures.includes(k))
+          .slice(0, MAX_QUICK_MENU);
+        setQuickKeys(defaults);
+      }
+    } catch {
+      // ignore storage errors
+    } finally {
+      setLoaded(true);
+    }
+  }, [currentUser, primaryRole, allFeatures]);
+
   // Load saved quick menu or fall back to role defaults
   useEffect(() => {
-    if (!currentUser || !primaryRole) return;
-
-    const load = async () => {
-      try {
-        const saved = await AsyncStorage.getItem(storageKey(currentUser));
-        if (saved) {
-          const parsed: string[] = JSON.parse(saved);
-          // filter out features the user no longer has access to
-          setQuickKeys(parsed.filter(k => allFeatures.includes(k)));
-        } else {
-          const defaults = (DEFAULT_QUICK_MENU[primaryRole] ?? [])
-            .filter(k => allFeatures.includes(k))
-            .slice(0, MAX_QUICK_MENU);
-          setQuickKeys(defaults);
-        }
-      } catch {
-        // ignore storage errors
-      } finally {
-        setLoaded(true);
-      }
-    };
-
     load();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser, primaryRole]);
@@ -64,5 +62,5 @@ export function useQuickMenu() {
     return 'ok';
   }, [quickKeys, persist]);
 
-  return { quickKeys, toggle, loaded, allFeatures };
+  return { quickKeys, toggle, reload: load, loaded, allFeatures };
 }

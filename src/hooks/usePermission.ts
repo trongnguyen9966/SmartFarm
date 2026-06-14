@@ -76,7 +76,9 @@ export function useFeatures(): string[] {
     return Array.from(features).filter(key => {
       const doctype = FEATURE_DOCTYPE_MAP[key];
       if (!doctype) return true; // no DocType mapping → always visible
-      return permissions[doctype]?.read === true;
+      // Only hide if server explicitly returned read: false for this doctype
+      const perm = permissions[doctype];
+      return perm === undefined || perm.read !== false;
     });
   }
 

@@ -120,6 +120,9 @@ export default {
     revenue: 'Revenue',
     deliveryNotes: 'Delivery Notes',
     cultivationLogs: 'Cultivation Logs',
+    groupGarden: 'Garden Management',
+    groupStore: 'Store',
+    groupReport: 'Reports & Finance',
   },
   quickMenu: {
     quickAccess: 'Quick Access',

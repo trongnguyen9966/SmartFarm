@@ -120,6 +120,9 @@ export default {
     revenue: 'Doanh thu',
     deliveryNotes: 'Phiếu giao hàng',
     cultivationLogs: 'Nhật ký canh tác',
+    groupGarden: 'Quản lý vườn',
+    groupStore: 'Cửa hàng',
+    groupReport: 'Báo cáo & Tài chính',
   },
   quickMenu: {
     quickAccess: 'Truy cập nhanh',
