@@ -44,7 +44,7 @@ export default function OrdersScreen() {
 
   const filtered = data.filter(item =>
     (item.customer_name ?? '').toLowerCase().includes(search.toLowerCase()) ||
-    item.name.toLowerCase().includes(search.toLowerCase())
+    (item.name || '').toLowerCase().includes(search.toLowerCase())
   );
 
   if (loading) return <LoadingScreen message={t('common.loading')} />;

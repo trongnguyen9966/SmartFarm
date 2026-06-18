@@ -15,7 +15,6 @@ export async function list(params?: {
   order_by?: string;
 }): Promise<CultivationLog[]> {
   return getList<CultivationLog>(DOCTYPE, {
-    fields: params?.fields || [],
     ...params,
   });
 }

@@ -3,7 +3,7 @@
  */
 
 import type { DeliveryNote } from '@/types/models';
-import { getList, getDoc } from '../client';
+import { getDoc, getList } from '../client';
 
 const DOCTYPE = 'Delivery Note';
 
@@ -15,11 +15,6 @@ export async function list(params?: {
   order_by?: string;
 }): Promise<DeliveryNote[]> {
   return getList<DeliveryNote>(DOCTYPE, {
-    fields: params?.fields || [
-      'name', 'customer', 'customer_name', 'posting_date',
-      'grand_total', 'status', 'custom_distribution_store'
-    ],
-    order_by: params?.order_by || 'posting_date desc',
     ...params,
   });
 }

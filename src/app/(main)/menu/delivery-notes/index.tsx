@@ -57,7 +57,7 @@ export default function DeliveryNotesScreen() {
 
   const filtered = data.filter(item =>
     (item.customer_name ?? item.customer ?? '').toLowerCase().includes(search.toLowerCase()) ||
-    item.name.toLowerCase().includes(search.toLowerCase())
+    (item.name || '').toLowerCase().includes(search.toLowerCase())
   );
 
   if (loading) return <LoadingScreen message={t('common.loading')} />;

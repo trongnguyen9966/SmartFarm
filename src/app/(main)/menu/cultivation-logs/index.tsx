@@ -52,7 +52,7 @@ export default function CultivationLogsScreen() {
   const filtered = data.filter(item =>
     (item.garden_name ?? item.garden ?? '').toLowerCase().includes(search.toLowerCase()) ||
     (item.cultivation_type ?? '').toLowerCase().includes(search.toLowerCase()) ||
-    item.name.toLowerCase().includes(search.toLowerCase())
+    (item.name || '').toLowerCase().includes(search.toLowerCase())
   );
 
   if (loading) return <LoadingScreen message={t('common.loading')} />;

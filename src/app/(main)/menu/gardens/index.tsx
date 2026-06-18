@@ -1,13 +1,13 @@
-import { useCallback, useEffect, useState } from 'react';
-import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useTranslation } from 'react-i18next';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { LoadingScreen, ErrorScreen } from '@/components/ui';
+import { ErrorScreen, LoadingScreen } from '@/components/ui';
 import * as GardenAPI from '@/services/api/resources/garden';
-import type { Garden } from '@/types/models';
 import settingApp from '@/settingApp';
+import type { Garden } from '@/types/models';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function GardensScreen() {
   const router = useRouter();
@@ -34,8 +34,8 @@ export default function GardensScreen() {
   useEffect(() => { loadData(); }, [loadData]);
 
   const filtered = data.filter(item =>
-    item.garden_name.toLowerCase().includes(search.toLowerCase()) ||
-    (item.farm ?? '').toLowerCase().includes(search.toLowerCase())
+    (item.garden_name || '').toLowerCase().includes(search.toLowerCase()) ||
+    (item.farm || '').toLowerCase().includes(search.toLowerCase())
   );
 
   if (loading) return <LoadingScreen message={t('common.loading')} />;

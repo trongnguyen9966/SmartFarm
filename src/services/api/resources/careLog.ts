@@ -15,18 +15,12 @@ export async function list(params?: {
   order_by?: string;
 }): Promise<CareLog[]> {
   return getList<CareLog>(DOCTYPE, {
-    fields: params?.fields || [],
     ...params,
   });
 }
 
 export async function get(name: string): Promise<CareLog> {
   const results = await getList<CareLog>(DOCTYPE, {
-    fields: [
-      'name', 'cultivation_log', 'garden', 'garden_name',
-      'care_date', 'efficiency_percent', 'content', 'owner',
-      'creation', 'modified',
-    ],
     filters: [['name', '=', name]],
     limit_page_length: 1,
   });

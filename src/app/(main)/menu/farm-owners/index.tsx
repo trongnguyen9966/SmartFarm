@@ -34,7 +34,7 @@ export default function FarmOwnersScreen() {
   useEffect(() => { loadData(); }, [loadData]);
 
   const filtered = data.filter(item =>
-    item.owner_name.toLowerCase().includes(search.toLowerCase()) ||
+    (item.owner_name || '').toLowerCase().includes(search.toLowerCase()) ||
     (item.phone ?? '').includes(search) ||
     (item.email ?? '').toLowerCase().includes(search.toLowerCase())
   );

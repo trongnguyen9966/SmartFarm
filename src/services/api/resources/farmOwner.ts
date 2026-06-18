@@ -15,7 +15,6 @@ export async function list(params?: {
   order_by?: string;
 }): Promise<FarmOwner[]> {
   return getList<FarmOwner>(DOCTYPE, {
-    fields: params?.fields || [],
     ...params,
   });
 }

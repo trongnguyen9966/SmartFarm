@@ -3,7 +3,7 @@
  */
 
 import type { Farm } from '@/types/models';
-import { getList, getDoc, createDoc, updateDoc } from '../client';
+import { createDoc, getDoc, getList, updateDoc } from '../client';
 
 const DOCTYPE = 'Farm';
 
@@ -15,8 +15,6 @@ export async function list(params?: {
   order_by?: string;
 }): Promise<Farm[]> {
   return getList<Farm>(DOCTYPE, {
-    fields: params?.fields || ['name', 'farm_name', 'farm_owner', 'distribution_store', 'status'],
-    order_by: params?.order_by || 'farm_name asc',
     ...params,
   });
 }

@@ -15,11 +15,6 @@ export async function list(params?: {
   order_by?: string;
 }): Promise<SalesOrder[]> {
   return getList<SalesOrder>(DOCTYPE, {
-    fields: params?.fields || [
-      'name', 'customer', 'customer_name', 'transaction_date',
-      'grand_total', 'status', 'custom_distribution_store'
-    ],
-    order_by: params?.order_by || 'transaction_date desc',
     ...params,
   });
 }

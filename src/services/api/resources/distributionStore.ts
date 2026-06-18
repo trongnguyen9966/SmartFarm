@@ -14,7 +14,6 @@ export async function list(params?: {
   limit_page_length?: number;
 }): Promise<DistributionStore[]> {
   return getList<DistributionStore>(DOCTYPE, {
-    fields: params?.fields || [],
     ...params,
   });
 }

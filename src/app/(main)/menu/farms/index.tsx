@@ -1,13 +1,13 @@
-import { useCallback, useEffect, useState } from 'react';
-import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useTranslation } from 'react-i18next';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { LoadingScreen, ErrorScreen } from '@/components/ui';
+import { ErrorScreen, LoadingScreen } from '@/components/ui';
 import * as FarmAPI from '@/services/api/resources/farm';
-import type { Farm } from '@/types/models';
 import settingApp from '@/settingApp';
+import type { Farm } from '@/types/models';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function FarmsScreen() {
   const router = useRouter();
@@ -33,10 +33,7 @@ export default function FarmsScreen() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  const filtered = data.filter(item =>
-    item.farm_name.toLowerCase().includes(search.toLowerCase()) ||
-    (item.farm_owner ?? '').toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = data;
 
   if (loading) return <LoadingScreen message={t('common.loading')} />;
   if (error) return <ErrorScreen message={error} onRetry={loadData} />;

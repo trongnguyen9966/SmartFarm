@@ -34,7 +34,7 @@ export default function StoresScreen() {
   useEffect(() => { loadData(); }, [loadData]);
 
   const filtered = data.filter(item =>
-    item.store_name.toLowerCase().includes(search.toLowerCase())
+    (item.store_name || '').toLowerCase().includes(search.toLowerCase())
   );
 
   if (loading) return <LoadingScreen message={t('common.loading')} />;

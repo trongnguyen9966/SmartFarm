@@ -44,7 +44,7 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => {
     if (__DEV__) {
-      console.log(`[API] Response ${response.status}:`, response.config.url);
+      console.log(`[API] Response ${response.status}:`, response.config.url, response.data);
       console.tron?.display({
         name: 'API RESPONSE',
         value: { status: response.status, url: response.config.url, data: response.data },
@@ -122,8 +122,10 @@ export async function getList<T>(
 ): Promise<T[]> {
   const queryParams: Record<string, string> = {};
 
-  if (params?.fields) {
+  if (params?.fields && params.fields.length > 0) {
     queryParams.fields = JSON.stringify(params.fields);
+  } else {
+    queryParams.fields = JSON.stringify(['*']);
   }
   if (params?.filters) {
     queryParams.filters = JSON.stringify(params.filters);

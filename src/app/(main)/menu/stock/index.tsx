@@ -41,8 +41,8 @@ export default function StockScreen() {
   useEffect(() => { loadData(); }, [loadData]);
 
   const filtered = data.filter(item =>
-    item.item_name.toLowerCase().includes(search.toLowerCase()) ||
-    item.item_code.toLowerCase().includes(search.toLowerCase()) ||
+    (item.item_name || '').toLowerCase().includes(search.toLowerCase()) ||
+    (item.item_code || '').toLowerCase().includes(search.toLowerCase()) ||
     (item.item_group ?? '').toLowerCase().includes(search.toLowerCase())
   );
 
