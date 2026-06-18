@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
-import { FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,6 +9,95 @@ import * as FarmAPI from '@/services/api/resources/farm';
 import * as GardenAPI from '@/services/api/resources/garden';
 import type { Farm, Garden } from '@/types/models';
 import settingApp from '@/settingApp';
+import MapView, { Marker, Polygon, Callout, type Region } from 'react-native-maps';
+
+interface GeoJSONFeature {
+  type: string;
+  properties: Record<string, unknown>;
+  geometry: {
+    type: string;
+    coordinates: number[] | number[][] | number[][][];
+  };
+}
+
+interface GeoJSONData {
+  type: string;
+  features: GeoJSONFeature[];
+}
+
+function parseGeolocation(geolocation?: string): GeoJSONData | null {
+  if (!geolocation) return null;
+  try {
+    const geo: GeoJSONData = JSON.parse(geolocation);
+    if (!geo.features?.length) return null;
+    return geo;
+  } catch {
+    return null;
+  }
+}
+
+function getCoordinatesFromGeo(geo: GeoJSONData): { latitude: number; longitude: number }[] {
+  const coords: { latitude: number; longitude: number }[] = [];
+  for (const feature of geo.features) {
+    const { type, coordinates } = feature.geometry;
+    if (type === 'Point') {
+      const [lng, lat] = coordinates as number[];
+      coords.push({ latitude: lat, longitude: lng });
+    } else if (type === 'Polygon') {
+      const ring = (coordinates as number[][][])[0];
+      for (const [lng, lat] of ring) {
+        coords.push({ latitude: lat, longitude: lng });
+      }
+    }
+  }
+  return coords;
+}
+
+function getMapRegion(farm: Farm, gardens: Garden[]): Region | null {
+  const allCoords: { latitude: number; longitude: number }[] = [];
+
+  // Farm location
+  if (farm.latitude && farm.longitude) {
+    allCoords.push({ latitude: farm.latitude, longitude: farm.longitude });
+  }
+
+  // Garden locations
+  for (const garden of gardens) {
+    const geo = parseGeolocation(garden.geolocation);
+    if (geo) {
+      allCoords.push(...getCoordinatesFromGeo(geo));
+    } else if (garden.latitude && garden.longitude) {
+      allCoords.push({ latitude: garden.latitude, longitude: garden.longitude });
+    }
+  }
+
+  if (allCoords.length === 0) return null;
+
+  if (allCoords.length === 1) {
+    return {
+      latitude: allCoords[0].latitude,
+      longitude: allCoords[0].longitude,
+      latitudeDelta: 0.02,
+      longitudeDelta: 0.02,
+    };
+  }
+
+  const lats = allCoords.map(c => c.latitude);
+  const lngs = allCoords.map(c => c.longitude);
+  const minLat = Math.min(...lats);
+  const maxLat = Math.max(...lats);
+  const minLng = Math.min(...lngs);
+  const maxLng = Math.max(...lngs);
+  const latDelta = (maxLat - minLat) * 1.5 || 0.02;
+  const lngDelta = (maxLng - minLng) * 1.5 || 0.02;
+
+  return {
+    latitude: (minLat + maxLat) / 2,
+    longitude: (minLng + maxLng) / 2,
+    latitudeDelta: latDelta,
+    longitudeDelta: lngDelta,
+  };
+}
 
 export default function FarmDetailScreen() {
   const { name } = useLocalSearchParams<{ name: string }>();
@@ -40,6 +129,8 @@ export default function FarmDetailScreen() {
   }, [name, t]);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  const mapRegion = useMemo(() => farm ? getMapRegion(farm, gardens) : null, [farm, gardens]);
 
   if (loading) return <LoadingScreen message={t('common.loading')} />;
   if (error || !farm) return <ErrorScreen message={error ?? t('farmDetail.notFound')} onRetry={loadData} />;
@@ -73,6 +164,111 @@ export default function FarmDetailScreen() {
             <InfoRow label={t('farmDetail.sqmCultivation')} value={`${farm.area} ${farm.area_uom || 'sqm'}`} />
           )}
         </View>
+
+        {/* Map */}
+        {mapRegion && (
+          <View style={styles.mapContainer}>
+            <MapView
+              style={styles.map}
+              initialRegion={mapRegion}
+              scrollEnabled={true}
+              zoomEnabled={true}
+              rotateEnabled={false}
+              pitchEnabled={false}
+            >
+              {/* Farm marker */}
+              {farm.latitude && farm.longitude && (
+                <Marker
+                  coordinate={{ latitude: farm.latitude, longitude: farm.longitude }}
+                >
+                  <View style={styles.markerContainer}>
+                    <View style={[styles.markerBubble, styles.markerFarm]}>
+                      <Ionicons name="leaf" size={16} color="#FFFFFF" />
+                    </View>
+                    <View style={[styles.markerArrow, styles.markerArrowFarm]} />
+                  </View>
+                  <Callout tooltip>
+                    <View style={styles.callout}>
+                      <Text style={styles.calloutTitle}>{farm.farm_name}</Text>
+                      <Text style={styles.calloutSub}>{t('menu.farms')}</Text>
+                    </View>
+                  </Callout>
+                </Marker>
+              )}
+
+              {/* Garden polygons & markers */}
+              {gardens.map(garden => {
+                const geo = parseGeolocation(garden.geolocation);
+                return (
+                  <View key={garden.name}>
+                    {geo && geo.features.map((feature, idx) => {
+                      const { type, coordinates } = feature.geometry;
+                      if (type === 'Polygon') {
+                        const ring = (coordinates as number[][][])[0];
+                        const coords = ring.map(([lng, lat]) => ({ latitude: lat, longitude: lng }));
+                        return (
+                          <Polygon
+                            key={`${garden.name}-polygon-${idx}`}
+                            coordinates={coords}
+                            fillColor={garden.status === 'Active' ? 'rgba(5, 150, 105, 0.2)' : 'rgba(107, 114, 128, 0.2)'}
+                            strokeColor={garden.status === 'Active' ? '#059669' : '#6B7280'}
+                            strokeWidth={2}
+                            tappable
+                            onPress={() => router.push(`/(main)/menu/gardens/${encodeURIComponent(garden.name)}` as never)}
+                          />
+                        );
+                      }
+                      if (type === 'Point') {
+                        const [lng, lat] = coordinates as number[];
+                        return (
+                          <Marker
+                            key={`${garden.name}-point-${idx}`}
+                            coordinate={{ latitude: lat, longitude: lng }}
+                            onCalloutPress={() => router.push(`/(main)/menu/gardens/${encodeURIComponent(garden.name)}` as never)}
+                          >
+                            <View style={styles.markerContainer}>
+                              <View style={[styles.markerBubble, garden.status === 'Active' ? styles.markerActive : styles.markerInactive]}>
+                                <Ionicons name="flower" size={14} color="#FFFFFF" />
+                              </View>
+                              <View style={[styles.markerArrow, garden.status === 'Active' ? styles.markerArrowActive : styles.markerArrowInactive]} />
+                            </View>
+                            <Callout tooltip>
+                              <View style={styles.callout}>
+                                <Text style={styles.calloutTitle}>{garden.garden_name}</Text>
+                                <Text style={styles.calloutHint}>{t('gardens.gardenDetail')} →</Text>
+                              </View>
+                            </Callout>
+                          </Marker>
+                        );
+                      }
+                      return null;
+                    })}
+
+                    {garden.latitude && garden.longitude && (
+                      <Marker
+                        coordinate={{ latitude: garden.latitude, longitude: garden.longitude }}
+                        onCalloutPress={() => router.push(`/(main)/menu/gardens/${encodeURIComponent(garden.name)}` as never)}
+                      >
+                        <View style={styles.markerContainer}>
+                          <View style={[styles.markerBubble, garden.status === 'Active' ? styles.markerActive : styles.markerInactive]}>
+                            <Ionicons name="flower" size={14} color="#FFFFFF" />
+                          </View>
+                          <View style={[styles.markerArrow, garden.status === 'Active' ? styles.markerArrowActive : styles.markerArrowInactive]} />
+                        </View>
+                        <Callout tooltip>
+                          <View style={styles.callout}>
+                            <Text style={styles.calloutTitle}>{garden.garden_name}</Text>
+                            <Text style={styles.calloutHint}>{t('gardens.gardenDetail')} →</Text>
+                          </View>
+                        </Callout>
+                      </Marker>
+                    )}
+                  </View>
+                );
+              })}
+            </MapView>
+          </View>
+        )}
 
         {/* Gardens */}
         <Text style={styles.sectionTitle}>{t('farmDetail.gardenList')}</Text>
@@ -146,6 +342,92 @@ const styles = StyleSheet.create({
   badgeTextActive: { color: '#059669' },
   badgeTextInactive: { color: '#6B7280' },
   card: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, marginBottom: 16 },
+  // Map
+  mapContainer: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginBottom: 16,
+    backgroundColor: '#FFFFFF',
+  },
+  map: {
+    width: '100%',
+    height: 220,
+  },
+  // Markers
+  markerContainer: {
+    alignItems: 'center',
+  },
+  markerBubble: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  markerFarm: {
+    backgroundColor: '#2563EB',
+  },
+  markerActive: {
+    backgroundColor: '#059669',
+  },
+  markerInactive: {
+    backgroundColor: '#6B7280',
+  },
+  markerArrow: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 5,
+    borderRightWidth: 5,
+    borderTopWidth: 7,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    marginTop: -1,
+  },
+  markerArrowFarm: {
+    borderTopColor: '#2563EB',
+  },
+  markerArrowActive: {
+    borderTopColor: '#059669',
+  },
+  markerArrowInactive: {
+    borderTopColor: '#6B7280',
+  },
+  // Callout
+  callout: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    padding: 10,
+    minWidth: 140,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  calloutTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1C1E21',
+  },
+  calloutSub: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  calloutHint: {
+    fontSize: 11,
+    color: '#059669',
+    marginTop: 4,
+    fontWeight: '500',
+  },
+  // Gardens list
   sectionTitle: { fontSize: 15, fontWeight: '600', color: '#333', marginBottom: 10 },
   emptySection: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 20, alignItems: 'center', marginBottom: 16 },
   emptySectionText: { fontSize: 14, color: '#9CA3AF' },

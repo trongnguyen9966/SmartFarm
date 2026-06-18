@@ -4,10 +4,41 @@ import settingApp from '@/settingApp';
 import type { Farm } from '@/types/models';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import MapView, { Marker, Callout, type Region } from 'react-native-maps';
+
+function getMapRegion(farms: Farm[]): Region | null {
+  const withCoords = farms.filter(f => f.latitude && f.longitude);
+  if (withCoords.length === 0) return null;
+
+  if (withCoords.length === 1) {
+    return {
+      latitude: withCoords[0].latitude!,
+      longitude: withCoords[0].longitude!,
+      latitudeDelta: 0.05,
+      longitudeDelta: 0.05,
+    };
+  }
+
+  const lats = withCoords.map(f => f.latitude!);
+  const lngs = withCoords.map(f => f.longitude!);
+  const minLat = Math.min(...lats);
+  const maxLat = Math.max(...lats);
+  const minLng = Math.min(...lngs);
+  const maxLng = Math.max(...lngs);
+  const latDelta = (maxLat - minLat) * 1.5 || 0.05;
+  const lngDelta = (maxLng - minLng) * 1.5 || 0.05;
+
+  return {
+    latitude: (minLat + maxLat) / 2,
+    longitude: (minLng + maxLng) / 2,
+    latitudeDelta: latDelta,
+    longitudeDelta: lngDelta,
+  };
+}
 
 export default function FarmsScreen() {
   const router = useRouter();
@@ -33,7 +64,17 @@ export default function FarmsScreen() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  const filtered = data;
+  const filtered = useMemo(() => {
+    if (!search.trim()) return data;
+    const q = search.toLowerCase();
+    return data.filter(item =>
+      (item.farm_name || '').toLowerCase().includes(q) ||
+      (item.farm_owner ?? '').toLowerCase().includes(q)
+    );
+  }, [data, search]);
+
+  const farmsWithCoords = useMemo(() => data.filter(f => f.latitude && f.longitude), [data]);
+  const mapRegion = useMemo(() => getMapRegion(data), [data]);
 
   if (loading) return <LoadingScreen message={t('common.loading')} />;
   if (error) return <ErrorScreen message={error} onRetry={loadData} />;
@@ -44,24 +85,61 @@ export default function FarmsScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('farmDetail.title')}</Text>
+        <Text style={styles.headerTitle}>{t('menu.farms')}</Text>
         <View style={{ width: 40 }} />
-      </View>
-
-      <View style={styles.searchRow}>
-        <Ionicons name="search-outline" size={18} color="#9CA3AF" />
-        <TextInput
-          style={styles.searchInput}
-          placeholder={t('common.search')}
-          placeholderTextColor="#9CA3AF"
-          value={search}
-          onChangeText={setSearch}
-        />
       </View>
 
       <FlatList
         data={filtered}
         keyExtractor={item => item.name}
+        ListHeaderComponent={
+          <View style={styles.searchRow}>
+            <Ionicons name="search-outline" size={18} color="#9CA3AF" />
+            <TextInput
+              style={styles.searchInput}
+              placeholder={t('common.search')}
+              placeholderTextColor="#9CA3AF"
+              value={search}
+              onChangeText={setSearch}
+            />
+          </View>
+        }
+        ListFooterComponent={
+          mapRegion && farmsWithCoords.length > 0 ? (
+            <View style={styles.mapContainer}>
+              <MapView
+                style={styles.map}
+                initialRegion={mapRegion}
+                scrollEnabled={true}
+                zoomEnabled={true}
+                rotateEnabled={false}
+                pitchEnabled={false}
+              >
+                {farmsWithCoords.map(farm => (
+                  <Marker
+                    key={farm.name}
+                    coordinate={{ latitude: farm.latitude!, longitude: farm.longitude! }}
+                    onCalloutPress={() => router.push(`/(main)/menu/farms/${encodeURIComponent(farm.name)}` as never)}
+                  >
+                    <View style={styles.markerContainer}>
+                      <View style={[styles.markerBubble, farm.status === 'Active' ? styles.markerActive : styles.markerInactive]}>
+                        <Ionicons name="leaf" size={16} color="#FFFFFF" />
+                      </View>
+                      <View style={[styles.markerArrow, farm.status === 'Active' ? styles.markerArrowActive : styles.markerArrowInactive]} />
+                    </View>
+                    <Callout tooltip>
+                      <View style={styles.callout}>
+                        <Text style={styles.calloutTitle}>{farm.farm_name}</Text>
+                        {farm.farm_owner && <Text style={styles.calloutSub}>{farm.farm_owner}</Text>}
+                        <Text style={styles.calloutHint}>{t('farmDetail.title')} →</Text>
+                      </View>
+                    </Callout>
+                  </Marker>
+                ))}
+              </MapView>
+            </View>
+          ) : null
+        }
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.card}
@@ -111,6 +189,86 @@ const styles = StyleSheet.create({
   },
   backBtn: { width: 40, height: 40, justifyContent: 'center' },
   headerTitle: { flex: 1, fontSize: 18, fontWeight: '700', color: '#FFFFFF', textAlign: 'center' },
+  mapContainer: {
+    marginHorizontal: 0,
+    marginBottom: 4,
+    borderRadius: 0,
+    overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
+  },
+  map: {
+    width: '100%',
+    height: 220,
+  },
+  // Custom marker
+  markerContainer: {
+    alignItems: 'center',
+  },
+  markerBubble: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  markerActive: {
+    backgroundColor: '#059669',
+  },
+  markerInactive: {
+    backgroundColor: '#6B7280',
+  },
+  markerArrow: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 6,
+    borderRightWidth: 6,
+    borderTopWidth: 8,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    marginTop: -1,
+  },
+  markerArrowActive: {
+    borderTopColor: '#059669',
+  },
+  markerArrowInactive: {
+    borderTopColor: '#6B7280',
+  },
+  // Callout
+  callout: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    padding: 10,
+    minWidth: 140,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  calloutTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1C1E21',
+  },
+  calloutSub: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  calloutHint: {
+    fontSize: 11,
+    color: '#059669',
+    marginTop: 4,
+    fontWeight: '500',
+  },
+  // Search & list
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',

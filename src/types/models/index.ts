@@ -68,6 +68,7 @@ export interface Garden extends BaseDocType {
   area_uom?: string;
   latitude?: number;
   longitude?: number;
+  geolocation?: string;
   soil_type?: string;
   status: 'Active' | 'Inactive';
 }
