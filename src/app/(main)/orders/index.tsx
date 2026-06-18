@@ -5,31 +5,24 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LoadingScreen, ErrorScreen } from '@/components/ui';
-import * as CultivationLogAPI from '@/services/api/resources/cultivationLog';
-import type { CultivationLog } from '@/types/models';
+import * as SalesOrderAPI from '@/services/api/resources/salesOrder';
+import type { SalesOrder } from '@/types/models';
 import settingApp from '@/settingApp';
 
-function StatusBadge({ status }: { status: CultivationLog['status'] }) {
-  const color = status === 'Completed' ? '#059669' : status === 'In Progress' ? '#2563EB' : '#6B7280';
-  const bg   = status === 'Completed' ? '#D1FAE5' : status === 'In Progress' ? '#DBEAFE' : '#F3F4F6';
-  const { t } = useTranslation();
-  const label = status === 'Completed'
-    ? t('cultivationLogs.statusCompleted')
-    : status === 'In Progress'
-    ? t('cultivationLogs.statusInProgress')
-    : t('cultivationLogs.statusCancelled');
-  return (
-    <View style={{ borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3, backgroundColor: bg }}>
-      <Text style={{ fontSize: 12, fontWeight: '600', color }}>{label}</Text>
-    </View>
-  );
-}
+const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
+  'Draft': { bg: '#F3F4F6', text: '#6B7280' },
+  'To Deliver and Bill': { bg: '#FEF3C7', text: '#D97706' },
+  'To Deliver': { bg: '#DBEAFE', text: '#2563EB' },
+  'To Bill': { bg: '#EDE9FE', text: '#7C3AED' },
+  'Completed': { bg: '#D1FAE5', text: '#059669' },
+  'Cancelled': { bg: '#FEE2E2', text: '#DC2626' },
+};
 
-export default function CultivationLogsScreen() {
+export default function OrdersScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const [data, setData] = useState<CultivationLog[]>([]);
+  const [data, setData] = useState<SalesOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
@@ -38,7 +31,7 @@ export default function CultivationLogsScreen() {
     try {
       setLoading(true);
       setError(null);
-      const result = await CultivationLogAPI.list();
+      const result = await SalesOrderAPI.list();
       setData(result);
     } catch {
       setError(t('common.errorLoadData'));
@@ -50,8 +43,7 @@ export default function CultivationLogsScreen() {
   useEffect(() => { loadData(); }, [loadData]);
 
   const filtered = data.filter(item =>
-    (item.garden_name ?? item.garden ?? '').toLowerCase().includes(search.toLowerCase()) ||
-    (item.cultivation_type ?? '').toLowerCase().includes(search.toLowerCase()) ||
+    (item.customer_name ?? '').toLowerCase().includes(search.toLowerCase()) ||
     (item.name || '').toLowerCase().includes(search.toLowerCase())
   );
 
@@ -64,7 +56,7 @@ export default function CultivationLogsScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('cultivationLogs.title')}</Text>
+        <Text style={styles.headerTitle}>{t('orders.title')}</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -72,7 +64,7 @@ export default function CultivationLogsScreen() {
         <Ionicons name="search-outline" size={18} color="#9CA3AF" />
         <TextInput
           style={styles.searchInput}
-          placeholder={t('common.search')}
+          placeholder={t('orders.searchPlaceholder')}
           placeholderTextColor="#9CA3AF"
           value={search}
           onChangeText={setSearch}
@@ -82,31 +74,36 @@ export default function CultivationLogsScreen() {
       <FlatList
         data={filtered}
         keyExtractor={item => item.name}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.card}
-            onPress={() => router.push(`/(main)/menu/cultivation-logs/${encodeURIComponent(item.name)}` as never)}
-          >
-            <View style={styles.cardTop}>
-              <View style={styles.iconBox}>
-                <Ionicons name="leaf" size={20} color="#8BC34A" />
+        renderItem={({ item }) => {
+          const s = STATUS_COLORS[item.status] ?? { bg: '#F3F4F6', text: '#6B7280' };
+          return (
+            <TouchableOpacity
+              style={styles.card}
+              onPress={() => router.push(`/(main)/orders/${encodeURIComponent(item.name)}` as never)}
+            >
+              <View style={styles.cardTop}>
+                <Text style={styles.cardTitle} numberOfLines={1}>
+                  {item.customer_name || item.customer}
+                </Text>
+                <View style={[styles.badge, { backgroundColor: s.bg }]}>
+                  <Text style={[styles.badgeText, { color: s.text }]}>{item.status}</Text>
+                </View>
               </View>
-              <View style={styles.cardInfo}>
-                <Text style={styles.cardTitle}>{item.garden_name || item.garden}</Text>
-                <Text style={styles.cardSub}>{item.cultivation_type || '—'}</Text>
+              <View style={styles.cardMeta}>
+                <Text style={styles.metaText}>{item.name}</Text>
+                <Text style={styles.metaText}>{item.transaction_date}</Text>
               </View>
-              <StatusBadge status={item.status} />
-            </View>
-            <View style={styles.cardFooter}>
-              <Text style={styles.cardDate}>{item.from_date}</Text>
-              {item.to_date ? <Text style={styles.cardDate}>→ {item.to_date}</Text> : null}
-            </View>
-          </TouchableOpacity>
-        )}
+              <Text style={styles.amount}>
+                {t('common.currency')}{(item.grand_total || 0).toLocaleString()}
+              </Text>
+            </TouchableOpacity>
+          );
+        }}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Ionicons name="leaf-outline" size={48} color="#D1D5DB" />
-            <Text style={styles.emptyText}>{t('cultivationLogs.notFound')}</Text>
+            <Ionicons name="receipt-outline" size={48} color="#D1D5DB" />
+            <Text style={styles.emptyText}>{t('orders.noOrders')}</Text>
+            <Text style={styles.emptyHint}>{t('orders.ordersWillShow')}</Text>
           </View>
         }
         contentContainerStyle={styles.list}
@@ -154,20 +151,14 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
   },
-  cardTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  iconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    backgroundColor: '#F9FBE7',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cardInfo: { flex: 1 },
-  cardTitle: { fontSize: 15, fontWeight: '600', color: '#1C1E21' },
-  cardSub: { fontSize: 13, color: '#6B7280', marginTop: 2 },
-  cardFooter: { flexDirection: 'row', gap: 8, marginTop: 8 },
-  cardDate: { fontSize: 12, color: '#9CA3AF' },
+  cardTop: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
+  cardTitle: { flex: 1, fontSize: 15, fontWeight: '600', color: '#1C1E21' },
+  badge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  badgeText: { fontSize: 11, fontWeight: '600' },
+  cardMeta: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+  metaText: { fontSize: 12, color: '#9CA3AF' },
+  amount: { fontSize: 16, fontWeight: '700', color: settingApp.green_primery },
   empty: { alignItems: 'center', paddingTop: 60, gap: 8 },
-  emptyText: { fontSize: 15, color: '#6B7280' },
+  emptyText: { fontSize: 15, color: '#6B7280', fontWeight: '500' },
+  emptyHint: { fontSize: 13, color: '#9CA3AF' },
 });

@@ -116,7 +116,7 @@ export default function FarmOwnerDetailScreen() {
             <TouchableOpacity
               key={farm.name}
               style={styles.farmCard}
-              onPress={() => router.push(`/(main)/menu/farms/${encodeURIComponent(farm.name)}` as never)}
+              onPress={() => router.push(`/(main)/farms/${encodeURIComponent(farm.name)}` as never)}
             >
               <View style={styles.farmInfo}>
                 <Text style={styles.farmName}>{farm.farm_name}</Text>

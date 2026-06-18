@@ -119,7 +119,7 @@ export default function FarmsScreen() {
                   <Marker
                     key={farm.name}
                     coordinate={{ latitude: farm.latitude!, longitude: farm.longitude! }}
-                    onCalloutPress={() => router.push(`/(main)/menu/farms/${encodeURIComponent(farm.name)}` as never)}
+                    onCalloutPress={() => router.push(`/(main)/farms/${encodeURIComponent(farm.name)}` as never)}
                   >
                     <View style={styles.markerContainer}>
                       <View style={[styles.markerBubble, farm.status === 'Active' ? styles.markerActive : styles.markerInactive]}>
@@ -143,7 +143,7 @@ export default function FarmsScreen() {
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.card}
-            onPress={() => router.push(`/(main)/menu/farms/${encodeURIComponent(item.name)}` as never)}
+            onPress={() => router.push(`/(main)/farms/${encodeURIComponent(item.name)}` as never)}
           >
             <View style={styles.cardLeft}>
               <View style={styles.iconBox}>

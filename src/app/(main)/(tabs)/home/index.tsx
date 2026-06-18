@@ -253,7 +253,7 @@ export default function HomeScreen() {
           <View style={styles.quickHeader}>
             <Text style={styles.quickTitle}>{t('quickMenu.quickAccess')}</Text>
             <TouchableOpacity
-              onPress={() => router.push('/(main)/menu/quick-menu-settings' as never)}
+              onPress={() => router.push('/(main)/quick-menu-settings' as never)}
               style={styles.quickSettingsBtn}
             >
               <Ionicons name="settings-outline" size={16} color="#9CA3AF" />

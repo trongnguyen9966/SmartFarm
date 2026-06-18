@@ -214,7 +214,7 @@ export default function FarmDetailScreen() {
                             strokeColor={garden.status === 'Active' ? '#059669' : '#6B7280'}
                             strokeWidth={2}
                             tappable
-                            onPress={() => router.push(`/(main)/menu/gardens/${encodeURIComponent(garden.name)}` as never)}
+                            onPress={() => router.push(`/(main)/gardens/${encodeURIComponent(garden.name)}` as never)}
                           />
                         );
                       }
@@ -224,7 +224,7 @@ export default function FarmDetailScreen() {
                           <Marker
                             key={`${garden.name}-point-${idx}`}
                             coordinate={{ latitude: lat, longitude: lng }}
-                            onCalloutPress={() => router.push(`/(main)/menu/gardens/${encodeURIComponent(garden.name)}` as never)}
+                            onCalloutPress={() => router.push(`/(main)/gardens/${encodeURIComponent(garden.name)}` as never)}
                           >
                             <View style={styles.markerContainer}>
                               <View style={[styles.markerBubble, garden.status === 'Active' ? styles.markerActive : styles.markerInactive]}>
@@ -247,7 +247,7 @@ export default function FarmDetailScreen() {
                     {garden.latitude && garden.longitude && (
                       <Marker
                         coordinate={{ latitude: garden.latitude, longitude: garden.longitude }}
-                        onCalloutPress={() => router.push(`/(main)/menu/gardens/${encodeURIComponent(garden.name)}` as never)}
+                        onCalloutPress={() => router.push(`/(main)/gardens/${encodeURIComponent(garden.name)}` as never)}
                       >
                         <View style={styles.markerContainer}>
                           <View style={[styles.markerBubble, garden.status === 'Active' ? styles.markerActive : styles.markerInactive]}>
@@ -281,7 +281,7 @@ export default function FarmDetailScreen() {
             <TouchableOpacity
               key={garden.name}
               style={styles.gardenCard}
-              onPress={() => router.push(`/(main)/menu/gardens/${encodeURIComponent(garden.name)}` as never)}
+              onPress={() => router.push(`/(main)/gardens/${encodeURIComponent(garden.name)}` as never)}
             >
               <View style={styles.gardenInfo}>
                 <Text style={styles.gardenName}>{garden.garden_name}</Text>

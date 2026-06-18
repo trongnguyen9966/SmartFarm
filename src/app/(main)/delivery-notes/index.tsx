@@ -90,7 +90,7 @@ export default function DeliveryNotesScreen() {
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.card}
-            onPress={() => router.push(`/(main)/menu/delivery-notes/${encodeURIComponent(item.name)}` as never)}
+            onPress={() => router.push(`/(main)/delivery-notes/${encodeURIComponent(item.name)}` as never)}
           >
             <View style={styles.cardTop}>
               <View style={styles.iconBox}>

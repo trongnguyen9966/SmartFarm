@@ -188,7 +188,7 @@ export default function GardensScreen() {
                               strokeColor={garden.status === 'Active' ? '#059669' : '#6B7280'}
                               strokeWidth={2}
                               tappable
-                              onPress={() => router.push(`/(main)/menu/gardens/${encodeURIComponent(garden.name)}` as never)}
+                              onPress={() => router.push(`/(main)/gardens/${encodeURIComponent(garden.name)}` as never)}
                             />
                           );
                         }
@@ -198,7 +198,7 @@ export default function GardensScreen() {
                             <Marker
                               key={`${garden.name}-point-${idx}`}
                               coordinate={{ latitude: lat, longitude: lng }}
-                              onCalloutPress={() => router.push(`/(main)/menu/gardens/${encodeURIComponent(garden.name)}` as never)}
+                              onCalloutPress={() => router.push(`/(main)/gardens/${encodeURIComponent(garden.name)}` as never)}
                             >
                               <View style={styles.markerContainer}>
                                 <View style={[styles.markerBubble, garden.status === 'Active' ? styles.markerActive : styles.markerInactive]}>
@@ -223,7 +223,7 @@ export default function GardensScreen() {
                       {garden.latitude && garden.longitude && (
                         <Marker
                           coordinate={{ latitude: garden.latitude, longitude: garden.longitude }}
-                          onCalloutPress={() => router.push(`/(main)/menu/gardens/${encodeURIComponent(garden.name)}` as never)}
+                          onCalloutPress={() => router.push(`/(main)/gardens/${encodeURIComponent(garden.name)}` as never)}
                         >
                           <View style={styles.markerContainer}>
                             <View style={[styles.markerBubble, garden.status === 'Active' ? styles.markerActive : styles.markerInactive]}>
@@ -250,7 +250,7 @@ export default function GardensScreen() {
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.card}
-            onPress={() => router.push(`/(main)/menu/gardens/${encodeURIComponent(item.name)}` as never)}
+            onPress={() => router.push(`/(main)/gardens/${encodeURIComponent(item.name)}` as never)}
           >
             <View style={styles.cardLeft}>
               <View style={styles.iconBox}>

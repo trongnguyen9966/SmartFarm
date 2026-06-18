@@ -67,7 +67,7 @@ export default function StoresScreen() {
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.card}
-            onPress={() => router.push(`/(main)/menu/stores/${encodeURIComponent(item.name)}` as never)}
+            onPress={() => router.push(`/(main)/stores/${encodeURIComponent(item.name)}` as never)}
           >
             <View style={styles.cardLeft}>
               <View style={styles.iconBox}>

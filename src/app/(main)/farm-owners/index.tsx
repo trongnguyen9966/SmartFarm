@@ -69,7 +69,7 @@ export default function FarmOwnersScreen() {
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.card}
-            onPress={() => router.push(`/(main)/menu/farm-owners/${encodeURIComponent(item.name)}` as never)}
+            onPress={() => router.push(`/(main)/farm-owners/${encodeURIComponent(item.name)}` as never)}
           >
             <View style={styles.cardLeft}>
               <View style={styles.avatar}>
