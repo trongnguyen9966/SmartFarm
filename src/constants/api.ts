@@ -69,6 +69,7 @@ export const DOCTYPES = {
   DELIVERY_NOTE: 'Delivery Note',
   DISTRIBUTION_STORE: 'Distribution Store',
   ITEM: 'Item',
+  FARM_PURCHASE_REQUEST: 'Farm Purchase Request',
 } as const;
 
 // Maps feature key → Frappe DocType for permission read check
@@ -83,6 +84,7 @@ export const FEATURE_DOCTYPE_MAP: Record<string, string> = {
   farmOwners:      DOCTYPES.FARM_OWNER,
   stores:          DOCTYPES.DISTRIBUTION_STORE,
   deliveryNotes:   DOCTYPES.DELIVERY_NOTE,
+  purchaseRequests: DOCTYPES.FARM_PURCHASE_REQUEST,
 };
 
 // Pagination defaults

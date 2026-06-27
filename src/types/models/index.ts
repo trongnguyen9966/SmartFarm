@@ -185,6 +185,28 @@ export interface Item extends BaseDocType {
 }
 
 // ============================================
+// Farm Purchase Request
+// ============================================
+export interface FarmPurchaseRequestItem {
+  item: string;
+  item_name?: string;
+  quantity: number;
+  uom: string;
+}
+
+export interface FarmPurchaseRequest extends BaseDocType {
+  farm: string;
+  farm_name?: string;
+  farm_owner: string;
+  farm_owner_name?: string;
+  distribution_store?: string;
+  store_name?: string;
+  items: FarmPurchaseRequestItem[];
+  notes?: string;
+  status: 'Pending' | 'Approved' | 'Rejected' | 'Completed' | 'Cancelled';
+}
+
+// ============================================
 // Customer (ERPNext standard)
 // ============================================
 export interface Customer extends BaseDocType {

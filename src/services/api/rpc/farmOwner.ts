@@ -37,3 +37,41 @@ export async function getDashboard(): Promise<FarmOwnerDashboard> {
 export async function getMyFarmOwner(): Promise<FarmOwner> {
   return callMethod<FarmOwner>('/api/method/esf.api.farm_owner.get_my_farm_owner', {});
 }
+
+export interface CreatePurchaseRequestParams {
+  farm: string;
+  items: Array<{ item: string; quantity: number; uom: string }>;
+  notes?: string;
+}
+
+export interface CreatePurchaseRequestResponse {
+  name: string;
+  distribution_store: string;
+  store_name: string;
+  status: string;
+}
+
+export async function createPurchaseRequest(
+  params: CreatePurchaseRequestParams
+): Promise<CreatePurchaseRequestResponse> {
+  return callMethod<CreatePurchaseRequestResponse>(
+    '/api/method/esf.api.farm_owner.create_purchase_request',
+    params
+  );
+}
+
+export interface NearestStore {
+  name: string;
+  store_name: string;
+  distance_km: number;
+}
+
+export async function getNearestStore(
+  latitude: number,
+  longitude: number
+): Promise<NearestStore> {
+  return callMethod<NearestStore>('/api/method/esf.api.farm_owner.get_nearest_store', {
+    latitude,
+    longitude,
+  });
+}

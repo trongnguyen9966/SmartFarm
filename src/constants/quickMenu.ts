@@ -26,7 +26,7 @@ export const MENU_ITEM_CONFIGS: MenuItemConfig[] = [
   { key: 'deliveryNotes',   icon: 'car-outline',         color: '#4CAF50', bg: '#E8F5E9', route: '/(main)/delivery-notes',     group: 'store'  },
   { key: 'inventory',       icon: 'cube-outline',        color: '#FF9800', bg: '#FFF3E0', route: '/(main)/stock',              group: 'store'  },
   { key: 'stores',          icon: 'storefront-outline',  color: '#2196F3', bg: '#E3F2FD', route: '/(main)/stores',             group: 'store'  },
-  { key: 'purchaseRequests',icon: 'cart-outline',        color: '#FF9800', bg: '#FFF3E0', route: '',                                group: 'store'  },
+  { key: 'purchaseRequests',icon: 'cart-outline',        color: '#FF9800', bg: '#FFF3E0', route: '/(main)/purchase-requests',       group: 'store'  },
   { key: 'revenue',         icon: 'bar-chart-outline',   color: '#9C27B0', bg: '#F3E5F5', route: '',                                group: 'report' },
   { key: 'reports',         icon: 'stats-chart-outline', color: '#FF5722', bg: '#FBE9E7', route: '',                                group: 'report' },
 ];

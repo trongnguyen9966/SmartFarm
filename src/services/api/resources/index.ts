@@ -12,3 +12,4 @@ export * as salesOrder from './salesOrder';
 export * as deliveryNote from './deliveryNote';
 export * as cultivationMaster from './cultivationMaster';
 export * as item from './item';
+export * as purchaseRequest from './purchaseRequest';
