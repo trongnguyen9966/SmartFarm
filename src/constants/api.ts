@@ -59,16 +59,31 @@ export const ROLE_FEATURES: Record<string, string[]> = {
 // Maps feature key → Frappe DocType for permission read check
 // If a feature key is NOT listed here, it is always visible (no DocType gate)
 export const FEATURE_DOCTYPE_MAP: Record<string, string> = {
-  farms:           'Farm',
-  myFarms:         'Farm',
-  orders:          'Sales Order',
-  gardens:         'Garden',
-  careLogs:        'Care Log',
-  cultivationLogs: 'Cultivation Log',
-  farmOwners:      'Farm Owner',
-  stores:          'Distribution Store',
-  deliveryNotes:   'Delivery Note',
+  farms:           DOCTYPES.FARM,
+  myFarms:         DOCTYPES.FARM,
+  orders:          DOCTYPES.SALES_ORDER,
+  gardens:         DOCTYPES.GARDEN,
+  careLogs:        DOCTYPES.CARE_LOG,
+  cultivationLogs: DOCTYPES.CULTIVATION_LOG,
+  farmOwners:      DOCTYPES.FARM_OWNER,
+  stores:          DOCTYPES.DISTRIBUTION_STORE,
+  deliveryNotes:   DOCTYPES.DELIVERY_NOTE,
 };
+
+// Frappe DocType names — single source of truth
+// If BE renames a DocType, only change here
+export const DOCTYPES = {
+  FARM: 'Farm',
+  GARDEN: 'Garden',
+  CARE_LOG: 'Care Log',
+  CULTIVATION_LOG: 'Cultivation Log',
+  CULTIVATION_MASTER: 'Cultivation Master',
+  FARM_OWNER: 'Farm Owner',
+  SALES_ORDER: 'Sales Order',
+  DELIVERY_NOTE: 'Delivery Note',
+  DISTRIBUTION_STORE: 'Distribution Store',
+  ITEM: 'Item',
+} as const;
 
 // Pagination defaults
 export const PAGINATION = {

@@ -1,12 +1,15 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LoadingScreen, ErrorScreen } from '@/components/ui';
+import { DOCTYPES } from '@/constants/api';
+import { usePermission } from '@/hooks/usePermission';
 import * as CultivationLogAPI from '@/services/api/resources/cultivationLog';
-import type { CultivationLog } from '@/types/models';
+import * as CareLogAPI from '@/services/api/resources/careLog';
+import type { CultivationLog, CareLog } from '@/types/models';
 import settingApp from '@/settingApp';
 
 function InfoRow({ label, value }: { label: string; value?: string | null }) {
@@ -29,25 +32,35 @@ export default function CultivationLogDetailScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const { canWrite: canWriteCL } = usePermission(DOCTYPES.CULTIVATION_LOG);
+  const { canCreate: canCreateCare } = usePermission(DOCTYPES.CARE_LOG);
   const [log, setLog] = useState<CultivationLog | null>(null);
+  const [careLogs, setCareLogs] = useState<CareLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const decodedName = name ? decodeURIComponent(name) : '';
+
   const loadData = useCallback(async () => {
-    if (!name) return;
+    if (!decodedName) return;
     try {
       setLoading(true);
       setError(null);
-      const result = await CultivationLogAPI.get(decodeURIComponent(name));
+      const [result, allCareLogs] = await Promise.all([
+        CultivationLogAPI.get(decodedName),
+        CareLogAPI.list(),
+      ]);
       setLog(result);
+      // Filter care logs belonging to this cultivation log
+      setCareLogs(allCareLogs.filter(cl => cl.cultivation_log === decodedName));
     } catch {
       setError(t('cultivationLogs.notFound'));
     } finally {
       setLoading(false);
     }
-  }, [name, t]);
+  }, [decodedName, t]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
 
   if (loading) return <LoadingScreen message={t('common.loading')} />;
   if (error || !log) return <ErrorScreen message={error ?? t('cultivationLogs.notFound')} onRetry={loadData} />;
@@ -67,7 +80,16 @@ export default function CultivationLogDetailScreen() {
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>{log.name}</Text>
-        <View style={{ width: 40 }} />
+        {canWriteCL ? (
+          <TouchableOpacity
+            onPress={() => router.push(`/(main)/cultivation-logs/form?edit=${encodeURIComponent(log.name)}` as never)}
+            style={styles.backBtn}
+          >
+            <Ionicons name="create-outline" size={22} color="#FFFFFF" />
+          </TouchableOpacity>
+        ) : (
+          <View style={{ width: 40 }} />
+        )}
       </View>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
@@ -98,10 +120,59 @@ export default function CultivationLogDetailScreen() {
         {/* Notes */}
         {log.notes ? (
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>{t('common.noDescription')}</Text>
+            <Text style={styles.notesTitle}>{t('form.notes')}</Text>
             <Text style={styles.notesText}>{log.notes}</Text>
           </View>
         ) : null}
+
+        {/* Care Logs Section */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>{t('cultivation.careLogs')}</Text>
+          <Text style={styles.sectionCount}>{careLogs.length}</Text>
+        </View>
+
+        {careLogs.length > 0 ? (
+          careLogs.map(care => (
+            <TouchableOpacity
+              key={care.name}
+              style={styles.careCard}
+              onPress={() => router.push(`/(main)/care-logs/${encodeURIComponent(care.name)}` as never)}
+            >
+              <View style={styles.careCardLeft}>
+                <View style={styles.careIconBox}>
+                  <Ionicons name="clipboard" size={18} color="#FF5722" />
+                </View>
+                <View style={styles.careCardInfo}>
+                  <Text style={styles.careCardTitle}>{care.care_date}</Text>
+                  {care.content ? (
+                    <Text style={styles.careCardSub} numberOfLines={1}>{care.content}</Text>
+                  ) : null}
+                </View>
+              </View>
+              <View style={styles.careCardRight}>
+                {care.efficiency_percent != null && (
+                  <View style={[
+                    styles.effBadge,
+                    { backgroundColor: care.efficiency_percent >= 80 ? '#D1FAE5' : care.efficiency_percent >= 50 ? '#FEF3C7' : '#FEE2E2' },
+                  ]}>
+                    <Text style={[
+                      styles.effText,
+                      { color: care.efficiency_percent >= 80 ? '#059669' : care.efficiency_percent >= 50 ? '#D97706' : '#DC2626' },
+                    ]}>
+                      {care.efficiency_percent}%
+                    </Text>
+                  </View>
+                )}
+                <Ionicons name="chevron-forward" size={16} color="#D1D5DB" />
+              </View>
+            </TouchableOpacity>
+          ))
+        ) : (
+          <View style={styles.emptyCare}>
+            <Ionicons name="clipboard-outline" size={32} color="#D1D5DB" />
+            <Text style={styles.emptyCareText}>{t('cultivation.noCareLogs')}</Text>
+          </View>
+        )}
 
         {/* Metadata */}
         <View style={styles.metaCard}>
@@ -113,6 +184,18 @@ export default function CultivationLogDetailScreen() {
           <Text style={styles.metaValue}>{log.modified?.split(' ')[0]}</Text>
         </View>
       </ScrollView>
+
+      {/* FAB - Create Care Log for this Cultivation */}
+      {canCreateCare && (
+        <TouchableOpacity
+          style={styles.fab}
+          onPress={() => router.push(
+            `/(main)/care-logs/form?cultivation_log=${encodeURIComponent(log.name)}&garden=${encodeURIComponent(log.garden)}&garden_name=${encodeURIComponent(log.garden_name || log.garden)}` as never
+          )}
+        >
+          <Ionicons name="add" size={28} color="#FFFFFF" />
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -134,9 +217,49 @@ const styles = StyleSheet.create({
   statusBadge: { borderRadius: 8, paddingHorizontal: 14, paddingVertical: 6 },
   statusText: { fontSize: 14, fontWeight: '700' },
   card: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, marginBottom: 12 },
-  sectionTitle: { fontSize: 14, fontWeight: '600', color: '#333', marginBottom: 8 },
+  sectionHeader: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    marginBottom: 8, marginTop: 4,
+  },
+  sectionTitle: { fontSize: 15, fontWeight: '700', color: '#1F2937' },
+  sectionCount: {
+    fontSize: 12, fontWeight: '600', color: '#6B7280',
+    backgroundColor: '#F3F4F6', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2,
+  },
   notesText: { fontSize: 14, color: '#374151', lineHeight: 22 },
+  notesTitle: { fontSize: 14, fontWeight: '600', color: '#333', marginBottom: 8 },
+  // Care log cards
+  careCard: {
+    backgroundColor: '#FFFFFF', borderRadius: 12, padding: 12, marginBottom: 8,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+  },
+  careCardLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  careIconBox: {
+    width: 36, height: 36, borderRadius: 10, backgroundColor: '#FBE9E7',
+    justifyContent: 'center', alignItems: 'center', marginRight: 10,
+  },
+  careCardInfo: { flex: 1 },
+  careCardTitle: { fontSize: 14, fontWeight: '600', color: '#1C1E21' },
+  careCardSub: { fontSize: 12, color: '#6B7280', marginTop: 2 },
+  careCardRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  effBadge: { borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
+  effText: { fontSize: 11, fontWeight: '600' },
+  emptyCare: {
+    alignItems: 'center', paddingVertical: 24, backgroundColor: '#FFFFFF',
+    borderRadius: 12, marginBottom: 12,
+  },
+  emptyCareText: { fontSize: 13, color: '#9CA3AF', marginTop: 6 },
+  // Metadata
   metaCard: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14 },
   metaLabel: { fontSize: 12, color: '#9CA3AF', marginTop: 8 },
   metaValue: { fontSize: 13, color: '#374151' },
+  // FAB
+  fab: {
+    position: 'absolute', right: 16, bottom: 24, zIndex: 10,
+    width: 56, height: 56, borderRadius: 28,
+    backgroundColor: settingApp.green_primery,
+    justifyContent: 'center', alignItems: 'center',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25, shadowRadius: 4, elevation: 6,
+  },
 });

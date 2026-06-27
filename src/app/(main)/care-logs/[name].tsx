@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LoadingScreen, ErrorScreen } from '@/components/ui';
+import { DOCTYPES } from '@/constants/api';
+import { usePermission } from '@/hooks/usePermission';
 import * as CareLogAPI from '@/services/api/resources/careLog';
 import type { CareLog } from '@/types/models';
 import settingApp from '@/settingApp';
@@ -14,6 +16,7 @@ export default function CareLogDetailScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const { canWrite } = usePermission(DOCTYPES.CARE_LOG);
   const [log, setLog] = useState<CareLog | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +57,16 @@ export default function CareLogDetailScreen() {
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>{log.name}</Text>
-        <View style={{ width: 40 }} />
+        {canWrite ? (
+          <TouchableOpacity
+            onPress={() => router.push(`/(main)/care-logs/form?edit=${encodeURIComponent(log.name)}` as never)}
+            style={styles.backBtn}
+          >
+            <Ionicons name="create-outline" size={22} color="#FFFFFF" />
+          </TouchableOpacity>
+        ) : (
+          <View style={{ width: 40 }} />
+        )}
       </View>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>

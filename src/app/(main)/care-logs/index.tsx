@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LoadingScreen, ErrorScreen } from '@/components/ui';
+import { DOCTYPES } from '@/constants/api';
+import { usePermission } from '@/hooks/usePermission';
 import * as CareLogAPI from '@/services/api/resources/careLog';
 import type { CareLog } from '@/types/models';
 import settingApp from '@/settingApp';
@@ -24,6 +26,7 @@ export default function CareLogsScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const { canCreate } = usePermission(DOCTYPES.CARE_LOG);
   const [data, setData] = useState<CareLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,6 +64,16 @@ export default function CareLogsScreen() {
         <Text style={styles.headerTitle}>{t('care.title')}</Text>
         <View style={{ width: 40 }} />
       </View>
+
+      {/* FAB - Create Care Log */}
+      {canCreate && (
+        <TouchableOpacity
+          style={styles.fab}
+          onPress={() => router.push('/(main)/care-logs/form' as never)}
+        >
+          <Ionicons name="add" size={28} color="#FFFFFF" />
+        </TouchableOpacity>
+      )}
 
       <View style={styles.searchRow}>
         <Ionicons name="search-outline" size={18} color="#9CA3AF" />
@@ -160,4 +173,12 @@ const styles = StyleSheet.create({
   cardId: { fontSize: 12, color: '#9CA3AF', marginTop: 6 },
   empty: { alignItems: 'center', paddingTop: 60, gap: 8 },
   emptyText: { fontSize: 15, color: '#6B7280' },
+  fab: {
+    position: 'absolute', right: 16, bottom: 24, zIndex: 10,
+    width: 56, height: 56, borderRadius: 28,
+    backgroundColor: settingApp.green_primery,
+    justifyContent: 'center', alignItems: 'center',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25, shadowRadius: 4, elevation: 6,
+  },
 });

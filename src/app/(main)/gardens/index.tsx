@@ -1,4 +1,6 @@
 import { ErrorScreen, LoadingScreen } from '@/components/ui';
+import { DOCTYPES } from '@/constants/api';
+import { usePermission } from '@/hooks/usePermission';
 import * as GardenAPI from '@/services/api/resources/garden';
 import settingApp from '@/settingApp';
 import type { Garden } from '@/types/models';
@@ -96,6 +98,7 @@ export default function GardensScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const { canCreate } = usePermission(DOCTYPES.GARDEN);
   const [data, setData] = useState<Garden[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -143,6 +146,16 @@ export default function GardensScreen() {
         <Text style={styles.headerTitle}>{t('gardens.title')}</Text>
         <View style={{ width: 40 }} />
       </View>
+
+      {/* FAB - Create Garden */}
+      {canCreate && (
+        <TouchableOpacity
+          style={styles.fab}
+          onPress={() => router.push('/(main)/gardens/form' as never)}
+        >
+          <Ionicons name="add" size={28} color="#FFFFFF" />
+        </TouchableOpacity>
+      )}
 
       <FlatList
         data={filtered}
@@ -431,4 +444,12 @@ const styles = StyleSheet.create({
   badgeTextInactive: { color: '#6B7280' },
   empty: { alignItems: 'center', paddingTop: 60, gap: 8 },
   emptyText: { fontSize: 15, color: '#6B7280' },
+  fab: {
+    position: 'absolute', right: 16, bottom: 24, zIndex: 10,
+    width: 56, height: 56, borderRadius: 28,
+    backgroundColor: settingApp.green_primery,
+    justifyContent: 'center', alignItems: 'center',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25, shadowRadius: 4, elevation: 6,
+  },
 });

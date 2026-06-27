@@ -1,4 +1,6 @@
 import { ErrorScreen, LoadingScreen } from '@/components/ui';
+import { DOCTYPES } from '@/constants/api';
+import { usePermission } from '@/hooks/usePermission';
 import * as GardenAPI from '@/services/api/resources/garden';
 import settingApp from '@/settingApp';
 import type { Garden } from '@/types/models';
@@ -81,6 +83,7 @@ export default function GardenDetailScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const { canWrite } = usePermission(DOCTYPES.GARDEN);
   const [garden, setGarden] = useState<Garden | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -114,7 +117,16 @@ export default function GardenDetailScreen() {
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>{garden.garden_name}</Text>
-        <View style={{ width: 40 }} />
+        {canWrite ? (
+          <TouchableOpacity
+            onPress={() => router.push(`/(main)/gardens/form?edit=${encodeURIComponent(garden.name)}` as never)}
+            style={styles.backBtn}
+          >
+            <Ionicons name="create-outline" size={22} color="#FFFFFF" />
+          </TouchableOpacity>
+        ) : (
+          <View style={{ width: 40 }} />
+        )}
       </View>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
