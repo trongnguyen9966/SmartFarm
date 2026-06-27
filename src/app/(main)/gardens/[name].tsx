@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Linking, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapView, { Marker, Polygon, type Region } from 'react-native-maps';
 
@@ -107,6 +107,35 @@ export default function GardenDetailScreen() {
   const geo = useMemo(() => parseGeolocation(garden?.geolocation), [garden?.geolocation]);
   const mapRegion = useMemo(() => geo ? getMapRegion(geo) : null, [geo]);
 
+  // Get navigable coordinates (from geolocation center or lat/lng)
+  const navCoords = useMemo(() => {
+    if (garden?.latitude && garden?.longitude) {
+      return { latitude: garden.latitude, longitude: garden.longitude };
+    }
+    if (mapRegion) {
+      return { latitude: mapRegion.latitude, longitude: mapRegion.longitude };
+    }
+    return null;
+  }, [garden?.latitude, garden?.longitude, mapRegion]);
+
+  const openNavigation = useCallback(() => {
+    if (!navCoords) return;
+    const { latitude, longitude } = navCoords;
+    const label = encodeURIComponent(garden?.garden_name || 'Garden');
+    const url = Platform.select({
+      ios: `maps:0,0?q=${label}&ll=${latitude},${longitude}`,
+      android: `geo:${latitude},${longitude}?q=${latitude},${longitude}(${label})`,
+    })!;
+    Linking.canOpenURL(url).then(supported => {
+      if (supported) {
+        Linking.openURL(url);
+      } else {
+        // Fallback to Google Maps web
+        Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`);
+      }
+    });
+  }, [navCoords, garden?.garden_name]);
+
   if (loading) return <LoadingScreen message={t('common.loading')} />;
   if (error || !garden) return <ErrorScreen message={error ?? t('gardens.notFound')} onRetry={loadData} />;
 
@@ -139,18 +168,18 @@ export default function GardenDetailScreen() {
           </View>
         </View>
 
-        {/* Map */}
-        {geo && mapRegion && (
+        {/* Map — show when geolocation or navCoords exist */}
+        {(geo || navCoords) && (
           <View style={styles.mapContainer}>
             <MapView
               style={styles.map}
-              initialRegion={mapRegion}
+              initialRegion={mapRegion ?? (navCoords ? { ...navCoords, latitudeDelta: 0.005, longitudeDelta: 0.005 } : undefined)}
               scrollEnabled={false}
               zoomEnabled={false}
               rotateEnabled={false}
               pitchEnabled={false}
             >
-              {geo.features.map((feature, index) => {
+              {geo?.features.map((feature, index) => {
                 const { type, coordinates } = feature.geometry;
                 if (type === 'Polygon') {
                   const ring = (coordinates as number[][][])[0];
@@ -177,8 +206,20 @@ export default function GardenDetailScreen() {
                 }
                 return null;
               })}
+              {/* Show marker from navCoords if no geo point exists */}
+              {!geo && navCoords && (
+                <Marker coordinate={navCoords} pinColor="#059669" />
+              )}
             </MapView>
           </View>
+        )}
+
+        {/* Navigate button */}
+        {navCoords && (
+          <TouchableOpacity style={styles.navBtn} onPress={openNavigation}>
+            <Ionicons name="navigate" size={18} color="#FFFFFF" />
+            <Text style={styles.navBtnText}>{t('gardens.navigate')}</Text>
+          </TouchableOpacity>
         )}
 
         {/* Info */}
@@ -242,6 +283,11 @@ const styles = StyleSheet.create({
   badgeText: { fontSize: 13, fontWeight: '600' },
   badgeTextActive: { color: '#059669' },
   badgeTextInactive: { color: '#6B7280' },
+  navBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    backgroundColor: '#2563EB', borderRadius: 10, paddingVertical: 12, marginBottom: 16,
+  },
+  navBtnText: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
   card: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, marginBottom: 16 },
   mapContainer: {
     borderRadius: 12,

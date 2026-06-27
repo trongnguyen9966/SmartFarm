@@ -56,20 +56,6 @@ export const ROLE_FEATURES: Record<string, string[]> = {
   [USER_ROLES.INVESTOR]: ['stores', 'revenue', 'farmOwners', 'reports'],
 };
 
-// Maps feature key → Frappe DocType for permission read check
-// If a feature key is NOT listed here, it is always visible (no DocType gate)
-export const FEATURE_DOCTYPE_MAP: Record<string, string> = {
-  farms:           DOCTYPES.FARM,
-  myFarms:         DOCTYPES.FARM,
-  orders:          DOCTYPES.SALES_ORDER,
-  gardens:         DOCTYPES.GARDEN,
-  careLogs:        DOCTYPES.CARE_LOG,
-  cultivationLogs: DOCTYPES.CULTIVATION_LOG,
-  farmOwners:      DOCTYPES.FARM_OWNER,
-  stores:          DOCTYPES.DISTRIBUTION_STORE,
-  deliveryNotes:   DOCTYPES.DELIVERY_NOTE,
-};
-
 // Frappe DocType names — single source of truth
 // If BE renames a DocType, only change here
 export const DOCTYPES = {
@@ -84,6 +70,20 @@ export const DOCTYPES = {
   DISTRIBUTION_STORE: 'Distribution Store',
   ITEM: 'Item',
 } as const;
+
+// Maps feature key → Frappe DocType for permission read check
+// If a feature key is NOT listed here, it is always visible (no DocType gate)
+export const FEATURE_DOCTYPE_MAP: Record<string, string> = {
+  farms:           DOCTYPES.FARM,
+  myFarms:         DOCTYPES.FARM,
+  orders:          DOCTYPES.SALES_ORDER,
+  gardens:         DOCTYPES.GARDEN,
+  careLogs:        DOCTYPES.CARE_LOG,
+  cultivationLogs: DOCTYPES.CULTIVATION_LOG,
+  farmOwners:      DOCTYPES.FARM_OWNER,
+  stores:          DOCTYPES.DISTRIBUTION_STORE,
+  deliveryNotes:   DOCTYPES.DELIVERY_NOTE,
+};
 
 // Pagination defaults
 export const PAGINATION = {

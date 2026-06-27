@@ -5,12 +5,12 @@ import * as GardenAPI from '@/services/api/resources/garden';
 import settingApp from '@/settingApp';
 import type { Garden } from '@/types/models';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import MapView, { Callout, Marker, Polygon, type Region } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import MapView, { Marker, Polygon, Callout, type Region } from 'react-native-maps';
 
 interface GeoJSONFeature {
   type: string;
@@ -109,6 +109,7 @@ export default function GardensScreen() {
       setLoading(true);
       setError(null);
       const result = await GardenAPI.list();
+      console.log('Gardens loaded:', result);
       setData(result);
     } catch {
       setError(t('common.errorLoadData'));
@@ -117,7 +118,7 @@ export default function GardensScreen() {
     }
   }, [t]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
 
   const filtered = useMemo(() => {
     if (!search.trim()) return data;

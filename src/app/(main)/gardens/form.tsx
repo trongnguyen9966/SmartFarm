@@ -3,14 +3,19 @@
  * Supports offline: saves to queue when no network.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
+  Keyboard,
   KeyboardAvoidingView,
+  Linking,
+  Modal,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -18,6 +23,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import MapView, { Marker, type MapPressEvent } from 'react-native-maps';
+import * as Location from 'expo-location';
 import { FormField, PickerField, PickerModal, type PickerItem } from '@/components/forms';
 import { LoadingScreen } from '@/components/ui';
 import * as GardenAPI from '@/services/api/resources/garden';
@@ -45,6 +52,16 @@ export default function GardenFormScreen() {
   const [area_uom, setAreaUom] = useState('sqm');
   const [soil_type, setSoilType] = useState('');
   const [status, setStatus] = useState<'Active' | 'Inactive'>('Active');
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
+
+  // Map picker state
+  const [mapVisible, setMapVisible] = useState(false);
+  const [tempCoord, setTempCoord] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [addressQuery, setAddressQuery] = useState('');
+  const [searching, setSearching] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const mapRef = useRef<MapView>(null);
 
   // Picker state
   const [farms, setFarms] = useState<PickerItem[]>([]);
@@ -82,6 +99,18 @@ export default function GardenFormScreen() {
         setAreaUom(g.area_uom || 'sqm');
         setSoilType(g.soil_type || '');
         setStatus(g.status);
+        // Parse geolocation GeoJSON to get lat/lng for map picker
+        if (g.geolocation) {
+          try {
+            const geo = JSON.parse(g.geolocation);
+            const point = geo.features?.find((f: any) => f.geometry?.type === 'Point');
+            if (point) {
+              const [lng, lat] = point.geometry.coordinates;
+              setLatitude(lat);
+              setLongitude(lng);
+            }
+          } catch { /* ignore parse errors */ }
+        }
       } catch {
         Alert.alert(t('common.error'), t('gardens.notFound'));
         router.back();
@@ -99,9 +128,69 @@ export default function GardenFormScreen() {
     return Object.keys(errs).length === 0;
   }, [garden_name, farm, t]);
 
+  const animateToCoord = useCallback((coord: { latitude: number; longitude: number }) => {
+    setTempCoord(coord);
+    mapRef.current?.animateToRegion({
+      ...coord,
+      latitudeDelta: 0.005,
+      longitudeDelta: 0.005,
+    }, 500);
+  }, []);
+
+  const handleSearchAddress = useCallback(async () => {
+    if (!addressQuery.trim()) return;
+    Keyboard.dismiss();
+    setSearching(true);
+    try {
+      const results = await Location.geocodeAsync(addressQuery.trim());
+      if (results.length > 0) {
+        animateToCoord({ latitude: results[0].latitude, longitude: results[0].longitude });
+      } else {
+        Alert.alert(t('common.notFound'), t('gardens.addressNotFound'));
+      }
+    } catch {
+      Alert.alert(t('common.error'), t('gardens.geocodeError'));
+    } finally {
+      setSearching(false);
+    }
+  }, [addressQuery, t, animateToCoord]);
+
+  const handleGetCurrentLocation = useCallback(async () => {
+    setLocating(true);
+    try {
+      const { status: permStatus } = await Location.requestForegroundPermissionsAsync();
+      if (permStatus !== 'granted') {
+        Alert.alert(t('common.error'), t('gardens.locationPermissionDenied'));
+        return;
+      }
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      animateToCoord({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+    } catch {
+      Alert.alert(t('common.error'), t('gardens.locationError'));
+    } finally {
+      setLocating(false);
+    }
+  }, [t, animateToCoord]);
+
   const handleSave = useCallback(async () => {
     if (!validate()) return;
     setSaving(true);
+
+    // Build geolocation GeoJSON from picked coordinates
+    let geolocation: string | undefined;
+    if (latitude != null && longitude != null) {
+      geolocation = JSON.stringify({
+        type: 'FeatureCollection',
+        features: [{
+          type: 'Feature',
+          properties: {},
+          geometry: {
+            type: 'Point',
+            coordinates: [longitude, latitude],
+          },
+        }],
+      });
+    }
 
     const data: Record<string, unknown> = {
       garden_name: garden_name.trim(),
@@ -111,7 +200,10 @@ export default function GardenFormScreen() {
       area_uom,
       soil_type: soil_type || undefined,
       status,
+      geolocation,
     };
+
+    console.log('[GardenForm] save body:', JSON.stringify({ action: isEdit ? 'update' : 'create', doctype: 'Garden', docname: gardenName, data }, null, 2));
 
     const result = await saveOrQueue({
       action: isEdit ? 'update' : 'create',
@@ -131,7 +223,7 @@ export default function GardenFormScreen() {
         [{ text: 'OK', onPress: () => router.back() }]
       );
     }
-  }, [validate, garden_name, farm, farm_owner, area, area_uom, soil_type, status, isEdit, gardenName, t, router]);
+  }, [validate, garden_name, farm, farm_owner, area, area_uom, soil_type, status, latitude, longitude, isEdit, gardenName, t, router]);
 
   if (loading) return <LoadingScreen message={t('common.loading')} />;
 
@@ -215,6 +307,57 @@ export default function GardenFormScreen() {
               </TouchableOpacity>
             </View>
           </View>
+
+          {/* Location picker */}
+          <View style={styles.locationSection}>
+            <Text style={styles.statusLabel}>{t('gardens.pickLocation')}</Text>
+            {latitude != null && longitude != null ? (
+              <View style={styles.locationPreview}>
+                <MapView
+                  style={styles.locationMap}
+                  region={{
+                    latitude, longitude,
+                    latitudeDelta: 0.005, longitudeDelta: 0.005,
+                  }}
+                  scrollEnabled={false}
+                  zoomEnabled={false}
+                  rotateEnabled={false}
+                  pitchEnabled={false}
+                >
+                  <Marker coordinate={{ latitude, longitude }} pinColor="#059669" />
+                </MapView>
+                <View style={styles.locationInfo}>
+                  <View style={styles.locationTextRow}>
+                    <Ionicons name="location" size={16} color="#059669" />
+                    <Text style={styles.locationText}>
+                      {latitude.toFixed(6)}, {longitude.toFixed(6)}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.locationChangeBtn}
+                    onPress={() => {
+                      setTempCoord({ latitude, longitude });
+                      setMapVisible(true);
+                    }}
+                  >
+                    <Ionicons name="create-outline" size={16} color="#2563EB" />
+                    <Text style={styles.locationChangeBtnText}>{t('form.edit')}</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={styles.locationPickBtn}
+                onPress={() => {
+                  setTempCoord(null);
+                  setMapVisible(true);
+                }}
+              >
+                <Ionicons name="map-outline" size={20} color="#2563EB" />
+                <Text style={styles.locationPickBtnText}>{t('gardens.pickLocation')}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </ScrollView>
 
         {/* Save Button */}
@@ -245,6 +388,102 @@ export default function GardenFormScreen() {
         }}
         onClose={() => setFarmPickerVisible(false)}
       />
+
+      {/* Map Location Picker Modal */}
+      <Modal visible={mapVisible} animationType="slide">
+        <View style={styles.mapModalContainer}>
+          <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+            <TouchableOpacity onPress={() => setMapVisible(false)} style={styles.backBtn}>
+              <Ionicons name="close" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>{t('gardens.pickLocation')}</Text>
+            <View style={{ width: 40 }} />
+          </View>
+
+          {/* Search bar */}
+          <View style={styles.searchBarRow}>
+            <Ionicons name="search-outline" size={18} color="#9CA3AF" />
+            <TextInput
+              style={styles.searchBarText}
+              placeholder={t('gardens.searchAddress')}
+              placeholderTextColor="#9CA3AF"
+              value={addressQuery}
+              onChangeText={setAddressQuery}
+              onSubmitEditing={handleSearchAddress}
+              returnKeyType="search"
+              autoCorrect={false}
+            />
+            {searching ? (
+              <ActivityIndicator size="small" color={settingApp.green_primery} />
+            ) : (
+              <TouchableOpacity onPress={handleSearchAddress}>
+                <Ionicons name="arrow-forward-circle" size={28} color={settingApp.green_primery} />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <View style={styles.mapHint}>
+            <Ionicons name="information-circle-outline" size={16} color="#6B7280" />
+            <Text style={styles.mapHintText}>{t('gardens.tapToPickLocation')}</Text>
+          </View>
+
+          {/* Map */}
+          <View style={{ flex: 1 }}>
+            <MapView
+              ref={mapRef}
+              style={styles.fullMap}
+              initialRegion={{
+                latitude: tempCoord?.latitude ?? 10.39,
+                longitude: tempCoord?.longitude ?? 106.92,
+                latitudeDelta: 0.02,
+                longitudeDelta: 0.02,
+              }}
+              showsUserLocation
+              showsMyLocationButton={false}
+              onPress={(e: MapPressEvent) => {
+                setTempCoord(e.nativeEvent.coordinate);
+              }}
+            >
+              {tempCoord && (
+                <Marker coordinate={tempCoord} pinColor="#059669" />
+              )}
+            </MapView>
+
+            {/* GPS floating button */}
+            <TouchableOpacity
+              style={[styles.gpsBtn, { top: 12, right: 12 }]}
+              onPress={handleGetCurrentLocation}
+              disabled={locating}
+            >
+              {locating ? (
+                <ActivityIndicator size="small" color={settingApp.green_primery} />
+              ) : (
+                <Ionicons name="locate" size={22} color={settingApp.green_primery} />
+              )}
+            </TouchableOpacity>
+          </View>
+
+          {/* Footer with coordinates + confirm */}
+          {tempCoord && (
+            <View style={[styles.mapFooter, { paddingBottom: insets.bottom + 12 }]}>
+              <Text style={styles.mapCoordText}>
+                {tempCoord.latitude.toFixed(6)}, {tempCoord.longitude.toFixed(6)}
+              </Text>
+              <TouchableOpacity
+                style={styles.mapConfirmBtn}
+                onPress={() => {
+                  setLatitude(tempCoord.latitude);
+                  setLongitude(tempCoord.longitude);
+                  setMapVisible(false);
+                }}
+              >
+                <Ionicons name="checkmark" size={20} color="#FFFFFF" />
+                <Text style={styles.mapConfirmBtnText}>{t('gardens.confirmLocation')}</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -288,4 +527,60 @@ const styles = StyleSheet.create({
   },
   saveBtnDisabled: { opacity: 0.6 },
   saveBtnText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+  // Location picker
+  locationSection: { marginBottom: 16 },
+  locationPickBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    backgroundColor: '#FFFFFF', borderRadius: 10, paddingVertical: 14,
+    borderWidth: 1, borderColor: '#E5E7EB', borderStyle: 'dashed',
+  },
+  locationPickBtnText: { fontSize: 14, fontWeight: '500', color: '#2563EB' },
+  locationPreview: { borderRadius: 12, overflow: 'hidden', backgroundColor: '#FFFFFF' },
+  locationMap: { width: '100%', height: 150 },
+  locationInfo: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 12, paddingVertical: 10,
+  },
+  locationTextRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  locationText: { fontSize: 13, color: '#374151' },
+  locationChangeBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  locationChangeBtnText: { fontSize: 13, fontWeight: '500', color: '#2563EB' },
+  // Map modal
+  mapModalContainer: { flex: 1, backgroundColor: '#F5F5F5' },
+  searchBarRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingHorizontal: 12, paddingVertical: 10,
+    backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#F3F4F6',
+  },
+  searchBarText: {
+    flex: 1, fontSize: 15, color: '#333',
+    paddingVertical: Platform.OS === 'ios' ? 8 : 4,
+  },
+  gpsBtn: {
+    position: 'absolute',
+    width: 44, height: 44, borderRadius: 22,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center', alignItems: 'center',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2, shadowRadius: 3, elevation: 4,
+  },
+  mapHint: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: '#F9FAFB', paddingHorizontal: 14, paddingVertical: 8,
+  },
+  mapHintText: { fontSize: 13, color: '#6B7280' },
+  fullMap: { flex: 1 },
+  mapFooter: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    backgroundColor: '#FFFFFF', paddingHorizontal: 16, paddingTop: 12,
+    borderTopLeftRadius: 16, borderTopRightRadius: 16,
+    shadowColor: '#000', shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1, shadowRadius: 4, elevation: 4,
+  },
+  mapCoordText: { fontSize: 13, color: '#6B7280', textAlign: 'center', marginBottom: 10 },
+  mapConfirmBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    backgroundColor: settingApp.green_primery, borderRadius: 12, paddingVertical: 14,
+  },
+  mapConfirmBtnText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
 });
